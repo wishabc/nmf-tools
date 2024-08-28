@@ -4,7 +4,7 @@ import re
 
 
 def read_version():
-    path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'src/__init__.py')
+    path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'nmf_tools/__init__.py')
     with open(path, 'r') as fh:
         return re.search(r'__version__\s?=\s?[\'"](.+)[\'"]', fh.read()).group(1)
 
