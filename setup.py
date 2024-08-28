@@ -15,7 +15,7 @@ def readme():
 
 
 setup(
-    name='nmf-tools',
+    name='nmf_tools',
     version=read_version(),
     description='',
     long_description=readme(),
@@ -24,7 +24,7 @@ setup(
     author_email='sboytsov@altius.org',
     url='https://github.com/wishabc/nmt-tools.git',
     license='GPL3',
-    packages=['nmf-tools'],
+    packages=['nmf_tools'],
     entry_points={
         'console_scripts': [
            # 'nmf-tools = nmf-tools.__main__:main'
