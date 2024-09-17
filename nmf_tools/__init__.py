@@ -23,4 +23,17 @@ __author__ = 'Alexandr Boytsov'
 __author_email__ = 'sboytsov@altius.org'
 __license__ = 'GPL3'
 
-from nmf_tools.plotting import test
+import os
+from matplotlib import style
+
+def in_vierstra_style(func):
+    '''
+    Decorator to apply common style to a function that generates a plot.
+    Style is defined in vierstragroup_matplotlibrc.
+    '''
+    def wrapper(*args, **kwargs):
+        style_file_path = os.path.join(os.path.dirname(__file__), 'vierstragroup_matplotlibrc')
+
+        with style.context(style_file_path):
+            return func(*args, **kwargs)
+    return wrapper

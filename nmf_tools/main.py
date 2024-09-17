@@ -8,5 +8,3 @@ def print_help():
 def main():
     print_help()
     print(f'nmf-tools version: {__version__}')
-
-
