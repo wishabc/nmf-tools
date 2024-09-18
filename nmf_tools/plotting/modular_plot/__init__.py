@@ -1,5 +1,7 @@
 import logging
 
+from matplotlib import pyplot as plt
+
 class LoggerMixin:
     def __init__(self, logger_level=None):
         if logger_level is None:
@@ -51,13 +53,33 @@ class PlotComponent(LoggerMixin):
             loader_kws = {}
         self.loader_kws = loader_kws
 
-        for kwarg in kwargs:
-            setattr(self, kwarg, kwargs[kwarg])
-
+        self.plot_kws = kwargs
 
     def plot(self, data, ax, **kwargs):
         """
+        Wrapper for the plot method to pass the plot_kws to the plot method.
+        Also supports axes set methods e.g. xlim -> ax.set_xlim
+        """
+        kws = self.plot_kws.copy()
+        kws.update(kwargs)
+
+        set_methods = [method.strip('set_') for method in dir(plt.Axes) if method.startswith('set_')]
+        axes_kws = kws.pop('axes_kwargs', {})
+        axes_kws = {key: axes_kws[key] for key in axes_kws if key in set_methods}
+
+        axes = self._plot(data, ax, **kws)
+        for key in axes_kws:
+            getattr(ax, 'set_' + key)(axes_kws[key])
+
+        return axes
+
+    def _plot(self, data, ax, **kwargs):
+        """
         Abstract plot method to be implemented by specific plot components.
+
+        Should not include any axes set methods as arguments,
+        as they will be intercepted by the plot method.
+        E.g. xlim, ylim, xlabel, etc.
         """
         raise NotImplementedError("Plot method should be implemented in subclasses.")
     

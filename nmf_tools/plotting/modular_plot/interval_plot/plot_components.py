@@ -53,7 +53,7 @@ class VerticalPlotComponent(PlotComponent):
         return margins, margins
 
 
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         """
         Abstract plot method to be implemented by specific plot components.
         """
@@ -150,7 +150,7 @@ class SingleBPObjectsComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         self.plot_single_bp_objects(data.positions, data.values, data.interval, ax=ax, **kwargs)
         return ax
     
@@ -197,7 +197,7 @@ class SignalPlotComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         signal = smooth_and_aggregate_per_nucleotide_signal(data.interval, data.signal_files, **self.loader_kws)
         signal_plot(signal, data.interval, ax=ax, **kwargs)
         return ax

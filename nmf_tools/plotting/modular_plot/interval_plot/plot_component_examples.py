@@ -27,7 +27,7 @@ class IdeogramComponent(VerticalPlotComponent):
         super().__init__(**kwargs)
 
     @in_vierstra_style
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         ideogram_plot(data.ideogram_data, data.interval.chrom, pos=data.interval.start, ax=ax, **kwargs)
         return ax
 
@@ -39,7 +39,7 @@ class GencodeComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         try:
             gene_annotation_plot(data.interval, data.gencode_annotation_file, ax=ax,
                                  gene_symbol_exclude_regex=r'^ENSG|^MIR|^LINC|.*-AS.*',
@@ -58,7 +58,7 @@ class FinemapComponent(SingleBPObjectsComponent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         data.positions = data.unique_finemap_df['start'] + 0.5
         data.values = data.unique_finemap_df['pip']
         return super().plot(data, ax, **kwargs)
@@ -75,7 +75,7 @@ class TrackComponent(VerticalPlotComponent):
             smooth=smooth,
         ))
 
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         ax.set_xlim(data.interval.start, data.interval.end)
         signal_plot(data.interval, data.signal, ax=ax, **kwargs)
         return ax
@@ -93,7 +93,7 @@ class NMFTracksComponent(SignalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         density_axes = self.plot_component_tracks(data.interval, data.nmf_components,
                                                   data.component_tracks, self.component_data,
                                                   gridspec_ax=ax, **kwargs)
@@ -106,7 +106,7 @@ class NMFTracksComponent(SignalPlotComponent):
 
     @staticmethod
     def plot_component_tracks(interval, components, component_tracks, component_data,
-                              gridspec_ax, common_lim=False):
+                              gridspec_ax, common_lim=False, **kwargs):
         assert len(components) == len(component_tracks)
         gss = gridspec.GridSpecFromSubplotSpec(len(components), 1, subplot_spec=gridspec_ax, hspace=0.05)
         axes = []
@@ -117,7 +117,7 @@ class NMFTracksComponent(SignalPlotComponent):
             ax_dens = gridspec_ax.get_figure().add_subplot(gss[i])
             lim = segs.max()
             lims.append(lim)
-            signal_plot(interval, segs, ax=ax_dens, color=color, lw=0)
+            signal_plot(interval, segs, ax=ax_dens, color=color, lw=0, **kwargs)
             ax_dens.set_ylim(0, lim)
             ax_dens.set_yticks([])
             if i != len(components) - 1:
@@ -138,7 +138,7 @@ class DHSIndexComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         segment_plot(data.interval, data.dhs_intervals, ax=ax, **kwargs)
         ax.set_xlim(data.interval.start, data.interval.end)
         ax.set_xticks([])
@@ -158,7 +158,7 @@ class DHSLoadingsComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         ax.axis('off')
         axes = self.add_axes_at_middle_points(data.dhs_intervals, data.interval, ax=ax, bp_width=50)
         self.plot_barplots_for_dhs(data.dhs_intervals, axes, H=data.H, component_data=self.component_data)
@@ -179,7 +179,7 @@ class FootprintsComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         segment_plot(data.interval, data.footprint_intervals, ax=ax, color='k')
         ax.set_xticks([])
         ax.set_yticks([])
@@ -188,20 +188,27 @@ class FootprintsComponent(VerticalPlotComponent):
         return ax
 
 
-@uses_loaders(FootprintPPLoader)
+@uses_loaders(FootprintDatasetLoader)
 class FootprintTrackComponent(VerticalPlotComponent):
-    def __init__(self, fp_samples, fdr_cutoff=0.05, **kwargs):
+    def __init__(self, fp_samples, kind='pp', fdr_cutoff=0.05, **kwargs):
         super().__init__(**kwargs)
         self.loader_kws.update({
             'fp_samples': fp_samples,
-            'fdr_cutoff': fdr_cutoff
+            'fdr_cutoff': fdr_cutoff,
             })
+        assert kind in ['pp', 'obs/exp']
+        self.kind = kind
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, smpl_idx=0, color='k', lw=0.5, **kwargs):
+    def _plot(self, data, ax, smpl_idx=0, color='k', exp_color='C1', lw=0.5, **kwargs):
         xs = self.squarify_array(np.arange(data.pp.shape[1] + 1) + data.interval.start)
-        ax.plot(xs, np.repeat(data.pp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
+        if self.kind == 'pp':
+            ax.plot(xs, np.repeat(data.pp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
+        elif self.kind == 'obs/exp':
+            ax.plot(xs, np.repeat(data.obs[smpl_idx, :], 2), color=exp_color, lw=lw, **kwargs)
+            ax.plot(xs, np.repeat(data.exp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
+        ax.set_xticks([])
         return ax
     
     @staticmethod
@@ -216,7 +223,7 @@ class MotifComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         ax.axis('off')
         axes = self.add_axes_at_middle_points(data.motif_intervals, data.interval, ax=ax)
         self.plot_motifs_for_footprints(data.motif_intervals, axes)
@@ -237,7 +244,7 @@ class CAVComponent(SingleBPObjectsComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, **kwargs):
         abs_es = np.abs(data.cavs['logit_es_combined'])
         self.plot_single_bp_objects(
             data.cavs['start'] + 0.5,

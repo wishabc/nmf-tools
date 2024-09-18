@@ -86,7 +86,8 @@ class FootprintsLoader(DataLoader):
         return data
     
 
-class FootprintPPLoader(DataLoader):
+# TODO: sample data file actually is not needed, it should be any pandas df file whatsoever
+class FootprintDatasetLoader(DataLoader):
     __required_fields__ = ['fp_sample_data_file', 'fp_sample_data']
 
     def _load(self, data: DataBundle, fp_samples, fdr_cutoff, **kwargs):
