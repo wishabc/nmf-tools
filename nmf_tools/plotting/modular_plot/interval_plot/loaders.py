@@ -1,13 +1,15 @@
 import numpy as np
 
 from nmf_tools.plotting.modular_plot import DataLoader, DataBundle
-from genome_tools.genomic_interval import df_to_genomic_intervals, filter_df_to_interval
+from genome_tools.genomic_interval import df_to_genomic_intervals, filter_df_to_interval, df_to_variant_intervals
 
 from genome_tools.data.extractors import tabix_extractor as TabixExtractor
 from genome_tools.utils.signal import smooth_and_aggregate_per_nucleotide_signal
 
 from footprint_tools.cli.post import posterior_stats as PosteriorStats
 from footprint_tools.stats import posterior
+
+from nmf_tools.plotting.extract_reads import extract_allelic_reads
 
 class IdeogramLoader(DataLoader):
     __required_fields__ = ['ideogram_data']
@@ -141,13 +143,46 @@ class MotifLoader(DataLoader):
         return data
 
 
-class CAVLoader(DataLoader):
+class AggregatedCAVLoader(DataLoader):
     __required_fields__ = ['cavs_data']
 
-    def _load(self, data: DataBundle, **kwargs):
+    def _load(self, data: DataBundle, fdr_tr, color, notsignif_color, **kwargs):
         filtered_cavs = filter_df_to_interval(self.preprocessor.cavs_data, self.interval)
-        filtered_cavs['sig_es'] = np.clip(np.where(filtered_cavs['min_fdr'] <= 0.1, np.abs(filtered_cavs['logit_es_combined']), 0), 0, 2)
+        filtered_cavs['is_significant'] = filtered_cavs['min_fdr'] <= fdr_tr
+        filtered_cavs['sig_es'] = np.clip(np.where(filtered_cavs['is_significant'], np.abs(filtered_cavs['logit_es_combined']), 0), 0, 2)
+        group_ids_df = filtered_cavs.query('is_significant').groupby(['#chr', 'start', 'end', 'ref', 'alt'])['group_id'].apply(lambda x: ','.join(map(str, x))).reset_index()
         filtered_cavs = filtered_cavs.groupby(['#chr', 'start', 'end', 'ref', 'alt'], group_keys=False).apply(lambda x: x.nlargest(1, 'sig_es'))
-        group_ids_df = self.preprocessor.cavs_data.query('min_fdr <= 0.1').groupby(['#chr', 'start', 'end', 'ref', 'alt'])['group_id'].apply(lambda x: ','.join(map(str, x))).reset_index()
-        data.cavs = filtered_cavs.merge(group_ids_df, on=['#chr', 'start', 'end', 'ref', 'alt'], how='left', suffixes=('', '_list'))
+        filtered_cavs = filtered_cavs.merge(group_ids_df, on=['#chr', 'start', 'end', 'ref', 'alt'], how='left', suffixes=('', '_list'))
+        
+        filtered_cavs['value'] = np.abs(filtered_cavs['logit_es_combined'])
+        filtered_cavs['color'] = np.where(filtered_cavs['is_significant'], color, notsignif_color)
+        data.cavs_intervals = df_to_variant_intervals(filtered_cavs, extra_columns=['value', 'color'])
+        return data
+    
+
+class PerSampleCAVLoader(DataLoader):
+    __required_fields__ = ['nonaggregated_cavs_data']
+
+    def _load(self, data: DataBundle, sample_id, fdr_tr, color, notsignif_color, **kwargs):
+        filtered_cavs = TabixExtractor(self.preprocessor.nonaggregated_cavs_data)[self.interval].query(f'sample_id == "{sample_id}"')
+        filtered_cavs['is_significant'] = filtered_cavs['FDR_sample'] <= fdr_tr
+        filtered_cavs['sig_es'] = np.clip(np.where(filtered_cavs['is_significant'], np.abs(filtered_cavs['logit_es']), 0), 0, 2)
+        
+        filtered_cavs['value'] = np.abs(filtered_cavs['logit_es'])
+        filtered_cavs['color'] = np.where(filtered_cavs['is_significant'], color, notsignif_color)
+        data.cavs_intervals = df_to_variant_intervals(filtered_cavs, extra_columns=['value', 'color'])
+        return data
+
+
+class AllelicReadsLoader(DataLoader):
+    __required_fields__ = ['samples_metadata']
+
+    def _load(self, data: DataBundle, sample_ids, variant_interval, **kwargs):
+        if isinstance(sample_ids, (str, int, float)):
+            sample_ids = [sample_ids]
+        cram_paths = self.preprocessor.samples_metadata.loc[sample_ids, 'cram_file']
+        reads = {}
+        for sample_id, cram_path in zip(sample_ids, cram_paths):
+            reads[sample_id] = extract_allelic_reads(cram_path, variant_interval, data.interval, **kwargs)
+        data.reads = reads
         return data

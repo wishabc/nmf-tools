@@ -3,6 +3,8 @@ from collections import namedtuple
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 
+import pandas as pd
+
 from .plot_components import VerticalPlotComponent
 
 from nmf_tools.plotting.modular_plot import DataBundle, LoggerMixin, PlotComponent
@@ -68,7 +70,7 @@ class MultipleIntervalDataPreprocessor(DataPreprocessor):
             required_loaders = getattr(component, 'required_loaders', [])
             for loader_class in required_loaders:
                 if loader_class not in data_bundle.processed_loaders:
-                    loader = loader_class(self, component_interval)
+                    loader = loader_class(self, component_interval, logger_level=self.logger.level)
                     data_bundle = loader.load(data_bundle, loader_kws=component.loader_kws, **kwargs)
                     data_bundle.processed_loaders.append(loader_class)
             data.append(data_bundle)
@@ -124,6 +126,15 @@ class IntervalPlotter(LoggerMixin):
                  inches_per_unit=1.0, width=2.5, **kwargs):
         super().__init__(**kwargs)
         self.component_names = [c.name for c in plot_components]
+
+        repeating_names = self._check_unique_component_names(self.component_names)
+        if len(repeating_names) > 0:
+            message = f"""Component names must be unique. 
+            Please, explicitly set the name for each repeating component class. 
+            Repeating component names: {repeating_names}"""
+            self.logger.error(message)
+            raise ValueError(message)
+
         self.CompTuple = namedtuple('ComponentNamesTuple', self.component_names)
 
         self.plot_components = self.CompTuple(*plot_components)
@@ -131,6 +142,14 @@ class IntervalPlotter(LoggerMixin):
         self.width = width
 
         self.gridspec = self.setup_default_gridspec()
+
+    @staticmethod
+    def _check_unique_component_names(names):
+        """
+        Check if the component names are unique. And return the non-unique names.
+        """
+        value_counts = pd.Series(names).value_counts()
+        return value_counts[value_counts > 1].index.tolist()
 
     @staticmethod
     def _convert_component_to_name(component):

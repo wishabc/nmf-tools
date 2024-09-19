@@ -1,4 +1,5 @@
 from nmf_tools.plotting.modular_plot import PlotComponent, uses_loaders
+from matplotlib.offsetbox import TextArea, VPacker, HPacker, AnnotationBbox
 
 import numpy as np
 
@@ -155,18 +156,14 @@ class SingleBPObjectsComponent(VerticalPlotComponent):
         return ax
     
     @staticmethod
-    def plot_single_bp_objects(positions, values, interval,
-                               annotations=None, ax=None,
-                               s=1.0, colors=None, **kwargs):
-        assert len(positions) == len(values)
+    def plot_single_bp_objects(variant_intervals, interval, ax=None, s=1.0, **kwargs):
         if ax is None:
             ax = plt.gca()
 
-        if colors is None:
-            colors = ['k'] * len(values)
-
-        if annotations is None:
-            annotations = [None] * len(values)
+        positions = [v.pos - 0.5 for v in variant_intervals]
+        values = [v.value for v in variant_intervals]
+        colors = [getattr(v, 'color', 'k') for v in variant_intervals]
+        annotations = [getattr(v, 'annotation', None) for v in variant_intervals]
 
         ax.scatter(x=positions, y=values, s=s, c=colors, **kwargs)
         for val, pos, annotation, color in zip(values, positions, annotations, colors):
@@ -176,6 +173,27 @@ class SingleBPObjectsComponent(VerticalPlotComponent):
                         y=val, fontsize=5, ha='left', va='center')
         if all(val >= 0 for val in values):
             ax.set_ylim(0, max(values) * 1.1)
+        return ax
+    
+    @staticmethod
+    def annotate_variant_alleles(variant_intervals, ax=None, box_alignment=(0.5, -0.6), **kwargs):
+        if ax is None:
+            ax = plt.gca()
+
+        for v in variant_intervals:
+            x = v.pos - 0.5
+            y = v.value
+            a1, a2 = v.ref, v.alt
+
+            text_areas = []
+            for text, color in zip([a1, '/', a2], [get_vocab_color(a1, 'dna'), 'k', get_vocab_color(a2, 'dna')]):
+                text_area = TextArea(text, textprops=dict(color=color, fontsize=5, ha='center', va='center'))
+                text_areas.append(text_area)
+            
+            hp = HPacker(children=text_areas, align="bottom", pad=0, sep=1)
+            ab = AnnotationBbox(hp, (x, y), frameon=False, box_alignment=box_alignment, xycoords='data', **kwargs)
+            ax.add_artist(ab)
+            
         return ax
     
 

@@ -1,5 +1,3 @@
-from matplotlib.offsetbox import TextArea, VPacker, HPacker, AnnotationBbox
-
 from nmf_tools.plotting.modular_plot import uses_loaders
 from nmf_tools.plotting.modular_plot.interval_plot.plot_components import VerticalPlotComponent, SingleBPObjectsComponent, SignalPlotComponent
 
@@ -16,6 +14,8 @@ from genome_tools.plotting.ideogram import ideogram_plot
 from genome_tools.plotting.utils import clear_spines
 from genome_tools.plotting.pwm import plot_motif_logo
 from genome_tools.plotting.colors.cm import get_vocab_color
+from genome_tools.genomic_interval import df_to_variant_intervals
+from genome_tools.plotting.utils import format_axes_to_interval
 
 from nmf_tools import in_vierstra_style
 from nmf_tools.plotting.matrices_barplots import component_barplot
@@ -158,9 +158,9 @@ class DHSLoadingsComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def _plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, bp_width=50, **kwargs):
         ax.axis('off')
-        axes = self.add_axes_at_middle_points(data.dhs_intervals, data.interval, ax=ax, bp_width=50)
+        axes = self.add_axes_at_middle_points(data.dhs_intervals, data.interval, ax=ax, bp_width=bp_width)
         self.plot_barplots_for_dhs(data.dhs_intervals, axes, H=data.H, component_data=self.component_data)
         return axes, ax
     
@@ -208,7 +208,7 @@ class FootprintTrackComponent(VerticalPlotComponent):
         elif self.kind == 'obs/exp':
             ax.plot(xs, np.repeat(data.obs[smpl_idx, :], 2), color=exp_color, lw=lw, **kwargs)
             ax.plot(xs, np.repeat(data.exp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
-        ax.set_xticks([])
+        format_axes_to_interval(ax, data.interval)
         return ax
     
     @staticmethod
@@ -237,49 +237,61 @@ class MotifComponent(VerticalPlotComponent):
             ax.set_xlabel(fp_interval.tf_name, labelpad=0.5)
 
 
-@uses_loaders(CAVLoader)
+@uses_loaders(AggregatedCAVLoader)
 class CAVComponent(SingleBPObjectsComponent):
-    def __init__(self, **kwargs):
+    def __init__(self, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0', **kwargs):
         super().__init__(**kwargs)
+        self.loader_kws.update(dict(
+            fdr_tr=fdr_tr,
+            color=color,
+            notsignif_color=notsignif_color,
+        ))
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
-        abs_es = np.abs(data.cavs['logit_es_combined'])
+
         self.plot_single_bp_objects(
-            data.cavs['start'] + 0.5,
-            abs_es,
+            data.cavs_intervals,
             data.interval,
-            ax=ax,
-            colors=np.where(data.cavs['min_fdr'] <= 0.1, 'k', '#C0C0C0')
+            ax=ax
         )
-        self.annotate_cav_alleles(data.cavs, ax=ax)
-        ax.set_ylim(0, max(abs_es.max() * 1.2, 2.0))
+        self.annotate_variant_alleles(data.cavs_intervals, ax=ax)
+        max_value = max(data.cavs_intervals, key=lambda x: x.value).value
+        ax.set_ylim(0, max(max_value * 1.2, 2.0))
         ax.set_xticks([])
         ax.set_ylabel("CAV\neffect size")
         return ax
     
-    @staticmethod
-    def annotate_cav_alleles(df, ax=None, box_alignment=(0.5, -0.6), **kwargs):
-        if ax is None:
-            ax = plt.gca()
 
-        for _, row in df.iterrows():
-            x = row['start'] + 0.5
-            y = row['sig_es']
-            a1, a2 = row['ref'], row['alt']
-            
-            if row['es_combined'] < 0:
-                a1, a2 = a2, a1
-            
-            text_areas = []
-            
-            for text, color in zip([a1, '/', a2], [get_vocab_color(a1, 'dna'), 'k', get_vocab_color(a2, 'dna')]):
-                text_area = TextArea(text, textprops=dict(color=color, fontsize=5, ha='center', va='center'))
-                text_areas.append(text_area)
-            
-            hp = HPacker(children=text_areas, align="bottom", pad=0, sep=1)
-            ab = AnnotationBbox(hp, (x, y), frameon=False, box_alignment=box_alignment, xycoords='data', **kwargs)
-            ax.add_artist(ab)
-            
+@uses_loaders(PerSampleCAVLoader)
+class NonAggregatedCAVComponent(CAVComponent):
+    def __init__(self, sample_id, **kwargs):
+        super().__init__(**kwargs)
+        self.loader_kws.update(dict(sample_id=sample_id))
+
+
+@uses_loaders(AllelicReadsLoader)
+class AllelicReadsComponent(VerticalPlotComponent):
+    def __init__(self, sample_ids, only_variant_overlap=False, **kwargs):
+        super().__init__(**kwargs)
+        self.only_variant_overlap = only_variant_overlap
+        self.loader_kws.update({
+            'sample_ids': sample_ids,
+        })
+
+    @in_vierstra_style
+    @VerticalPlotComponent.set_xlim_interval
+    def _plot(self, data, ax, **kwargs):
+        reads = []
+        for sample_id, sample_reads in data.reads.items():
+            reads.extend(sample_reads)
+        reads = sorted(reads, key=lambda x: x.base.replace('N', 'Z'))
+        for r in reads:
+            r.rectprops = dict(color=get_vocab_color(r.base, 'dna', default='grey'))
+        if self.only_variant_overlap:
+            reads = [r for r in reads if r.base != 'N']
+        segment_plot(data.interval, reads, ax=ax)
+        ax.set_yticks([])
+        format_axes_to_interval(ax, data.interval)
         return ax

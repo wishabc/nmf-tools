@@ -53,7 +53,7 @@ class DataPreprocessor(LoggerMixin):
             data_bundle = DataBundle(interval, logger_level=self.logger.level)
             for loader_class in required_loaders:
                 if loader_class not in data_bundle.processed_loaders:
-                    loader = loader_class(self, interval)
+                    loader = loader_class(self, interval, logger_level=self.logger.level)
                     data_bundle = loader.load(data_bundle, loader_kws=component.loader_kws, **kwargs)
                     data_bundle.processed_loaders.append(loader_class)
             data.append(data_bundle)
