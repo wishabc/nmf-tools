@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 import os
 import re
 
@@ -24,7 +24,7 @@ setup(
     author_email='sboytsov@altius.org',
     url='https://github.com/wishabc/nmt-tools.git',
     license='GPL3',
-    packages=['nmf_tools'],
+    packages=find_packages(),
     entry_points={
         'console_scripts': [
            # 'nmf-tools = nmf-tools.__main__:main'
