@@ -64,29 +64,42 @@ class ComponentTracksLoader(DataLoader):
         return data
 
 
-class DHSIndexLoader(DataLoader):
-    __required_fields__ = ['annotated_dhs_index']
+class SegmentsLoader(DataLoader):
+    __required_fields__ = [] # needed to be set in subclasses, first element will be used as the df to extract intervals from
+    __intervals_attr__ = 'intervals'
 
-    def _load(self, data: DataBundle, **kwargs):
-        data.dhs_intervals = df_to_genomic_intervals(
-            self.preprocessor.annotated_dhs_index.reset_index(drop=True).reset_index(),
+    def _load(self, data: DataBundle, extra_columns=None, rectprops_columns=None, **kwargs):
+        if rectprops_columns is None:
+            rectprops_columns = []
+        if extra_columns is None:
+            extra_columns = []
+        segments_df = getattr(self.preprocessor, self.__required_fields__[0])
+        setattr(data, self.__intervals_attr__, 
+                df_to_genomic_intervals(
+            segments_df.reset_index(drop=True).reset_index(),
             self.interval,
-            extra_columns=['index']
-        )
+            extra_columns=['index'] + extra_columns + rectprops_columns
+        ))
+
+        if rectprops_columns:
+            for interval in getattr(data, self.__intervals_attr__):
+                interval.rectprops = {col: getattr(interval, col) for col in rectprops_columns}
         return data
+
+
+class DHSIndexLoader(SegmentsLoader):
+    __required_fields__ = ['annotated_dhs_index']
+    __intervals_attr__ = 'dhs_intervals'
+
+
+class FootprintsLoader(SegmentsLoader):
+    __required_fields__ = ['full_footprints_index']
+    __intervals_attr__ = 'footprint_intervals'
 
 
 class DHSLoadingsLoader(DataLoader):
     __required_fields__ = ['H']
 
-
-class FootprintsLoader(DataLoader):
-    __required_fields__ = ['full_footprints_index']
-
-    def _load(self, data: DataBundle, **kwargs):
-        data.footprint_intervals = df_to_genomic_intervals(self.preprocessor.full_footprints_index, self.interval)
-        return data
-    
 
 # TODO: sample data file actually is not needed, it should be any pandas df file whatsoever
 class FootprintDatasetLoader(DataLoader):

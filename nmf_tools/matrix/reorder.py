@@ -4,6 +4,84 @@ from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 import scipy.cluster.hierarchy as sch
 
+import numpy as np
+
+class MatrixReordering:
+    def __init__(self, m, n):
+        self.m = m  # Number of rows
+        self.n = n  # Number of columns
+        self.within_row_order = None
+        self.within_col_order = None
+
+    def reorder(self, order, axis):
+        order = np.array(order)
+        expected_shape = (self.m, self.n) if axis == 0 else (self.n, self.m)
+        if order.ndim == 1:
+            assert order.shape[0] == expected_shape[1], "Order must have the same length as the number of rows or columns"
+        elif order.ndim == 2:
+            assert order.shape == expected_shape, f"Order must be of shape {expected_shape}"
+        else:
+            raise AssertionError("Order must be a 1D or a 2D array")
+        if axis == 0:
+            assert order.max() < self.n
+            self._check_dim(order.ndim + getattr(self.within_row_order, 'ndim', 0))
+            self.within_row_order = order
+        else:
+            assert order.max() < self.m
+            self._check_dim(order.ndim + getattr(self.within_col_order, 'ndim', 0))
+            self.within_col_order = order
+
+    @staticmethod
+    def _check_dim(n):
+        if n >= 4:
+            raise ValueError("Within-row and within-column ordderings can not be both 2D arrays")
+
+    def combine(self, other):
+        assert self.m == other.m and self.n == other.n, "Both matrices must have the same dimensions to combine"
+        self._check_dim(
+            max(
+                getattr(self.within_row_order, 'ndim', 1),
+                getattr(other.within_row_order, 'ndim', 1)
+            ) + 
+            max(
+                getattr(self.within_col_order, 'ndim', 1),
+                getattr(other.within_col_order, 'ndim', 1)
+            )
+        )
+        self.within_row_order = self._combine_axis(self.within_row_order, other.within_row_order)
+        self.within_col_order = self._combine_axis(self.within_col_order, other.within_col_order)
+
+    def _combine_axis(self, current_order, other_order):
+        if other_order is not None:
+            if current_order is not None:
+                if current_order.ndim == 1:
+                    current_order = current_order[None, :]
+                if other_order.ndim == 1:
+                    other_order = other_order[None, :]
+                return np.squeeze(np.take_along_axis(current_order, other_order, axis=1))
+            return other_order
+        return current_order
+
+    def _apply_reordering(self, matrix, order):
+        if order.ndim == 1:
+            return matrix[:, order]
+        return np.take_along_axis(matrix, order, axis=1)
+    
+    def apply_reordering(self, matrix):
+        matrix = np.array(matrix)
+
+        assert matrix.shape == (self.m, self.n), "Matrix must have the same dimensions as the reordering object"
+        
+        # Apply within-row reordering using np.take_along_axis
+        if self.within_row_order is not None:
+            matrix = self._apply_reordering(matrix, self.within_row_order)
+
+        # Apply within-column reordering using np.take_along_axis
+        if self.within_col_order is not None:
+            matrix = self._apply_reordering(matrix.T, self.within_col_order).T
+
+        return matrix
+
 
 def reorder_components(W1, W2):
     '''

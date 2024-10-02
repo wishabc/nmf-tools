@@ -207,7 +207,7 @@ class SignalPlotComponent(VerticalPlotComponent):
     """
     def __init__(self, smooth=True, step=10, bandwidth=150, **kwargs):
         super().__init__(**kwargs)
-        self.loader_kws.update(dict(
+        self.loader_kwargs.update(dict(
             step=step,
             bandwidth=bandwidth,
             smooth=smooth,
@@ -216,7 +216,25 @@ class SignalPlotComponent(VerticalPlotComponent):
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
-        signal = smooth_and_aggregate_per_nucleotide_signal(data.interval, data.signal_files, **self.loader_kws)
+        signal = smooth_and_aggregate_per_nucleotide_signal(data.interval, data.signal_files, **self.loader_kwargs)
         signal_plot(signal, data.interval, ax=ax, **kwargs)
         return ax
 
+
+class SegmentPlotComponent(VerticalPlotComponent):
+    __intervals_attr__ = 'intervals'
+
+    def __init__(self, rectprops_columns=None, **kwargs):
+        super().__init__(**kwargs)
+        self.loader_kwargs.update(dict(
+            rectprops_columns=rectprops_columns,
+        ))
+
+    @in_vierstra_style
+    @VerticalPlotComponent.set_xlim_interval
+    def _plot(self, data, ax, **kwargs):
+        segment_plot(data.interval, getattr(data, self.__intervals_attr__), ax=ax, **kwargs)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        clear_spines(ax)
+        return ax

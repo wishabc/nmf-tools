@@ -42,16 +42,16 @@ class PlotComponent(LoggerMixin):
     Each plot component should implement the `plot` method,
     which takes the data and an axis object and plots the data on it.
     """
-    def __init__(self, name=None, loader_kws=None, **kwargs):
+    def __init__(self, name=None, loader_kwargs=None, **kwargs):
         super().__init__(logger_level=kwargs.pop('logger_level', None))
 
         if name is None:
             name = self.__class__.__name__
         self.name = name
 
-        if loader_kws is None:
-            loader_kws = {}
-        self.loader_kws = loader_kws
+        if loader_kwargs is None:
+            loader_kwargs = {}
+        self.loader_kwargs = loader_kwargs
 
         self.plot_kws = kwargs
 
@@ -109,15 +109,15 @@ class DataLoader(LoggerMixin):
             setattr(data, field, value)
         return data
     
-    def load(self, data: DataBundle, loader_kws=None, **kwargs):
+    def load(self, data: DataBundle, loader_kwargs=None, **kwargs):
         """
         Validate the preprocessor fields and call the load method.
         """
         self._validate()
-        if loader_kws is None:
-            loader_kws = {}
-        loader_kws.update(kwargs)
-        return self._load(data, **loader_kws)
+        if loader_kwargs is None:
+            loader_kwargs = {}
+        loader_kwargs.update(kwargs)
+        return self._load(data, **loader_kwargs)
     
     def _validate(self):
         """
