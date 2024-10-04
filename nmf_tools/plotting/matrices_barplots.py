@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from nmf_tools import in_vierstra_style
-from nmf_tools.matrix.reorder import apply_order
+from nmf_tools.matrix.reorder import MatrixReordering
 
 
 def get_order(agst, sorted_matrix, by='primary'):
@@ -17,11 +17,10 @@ def get_order(agst, sorted_matrix, by='primary'):
     return order
 
 
-def get_tops_and_bottoms(agst, heights):
+def get_tops_and_bottoms(idxs, heights):
     tops = heights.cumsum(axis=0)
     bottoms = tops - heights
-    
-    idxs = np.argsort(agst, axis=0)
+
     return np.take_along_axis(tops, idxs, axis=0), np.take_along_axis(bottoms, idxs, axis=0)
 
 
@@ -38,25 +37,38 @@ def plot_stacked(matrix, colors, ax=None, order_by='primary',
     if order is None:
         order = get_order(agst, heights, by=order_by)
 
-    tops, bottoms = get_tops_and_bottoms(agst[:, order], heights[:, order])
+    idxs = np.argsort(agst, axis=0) # inverse reordering
+    tops, bottoms = get_tops_and_bottoms(idxs[:, order], heights[:, order])
+
+    plot_stacked_barplot(bottoms, tops, colors, ax=ax, orient=orient)
+
+    return ax, agst, order
+
+
+@in_vierstra_style
+def plot_stacked_barplot(bottoms, tops, colors, xvals=None, ax=None, orient='horizontal'):
+    assert bottoms.shape == tops.shape
+    assert bottoms.shape[0] == len(colors)
 
     fb_tops = np.repeat(tops, 2, axis=1)
     fb_bottoms = np.repeat(bottoms, 2, axis=1)
-    xvals = np.concatenate([[0], np.repeat(np.arange(1, matrix.shape[1]), 2), [matrix.shape[1]]])
+    if xvals is None:
+        xvals = np.arange(bottoms.shape[1] + 1)
+    xvals = np.concatenate([xvals[0], np.repeat(xvals[1:-1], 2), xvals[-1]])
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(matrix.shape[1]/100, 2))
-    for i, color in enumerate(colors):
+        fig, ax = plt.subplots(figsize=(len(xvals)/100, 2) if orient == 'horizontal' else (2, len(xvals)/100))
+    for btms, tps, color in zip(fb_bottoms, fb_tops, colors):
         if orient == 'horizontal':
-            ax.fill_between(xvals, fb_bottoms[i], fb_tops[i], lw=0, color=color)
-            ax.set_xlim(0, matrix.shape[1])
+            ax.fill_between(xvals, btms, tps, lw=0, color=color)
+            ax.set_xlim(0, len(xvals))
             ax.set_ylim(0, None)
         elif orient == 'vertical':
-            ax.fill_betweenx(xvals, fb_bottoms[i], fb_tops[i], lw=0, color=color)
-            ax.set_ylim(0, matrix.shape[1])
+            ax.fill_betweenx(xvals, btms, tps, lw=0, color=color)
+            ax.set_ylim(0, len(xvals))
             ax.set_xlim(0, None)
 
-    return ax, agst, order
+    return ax
 
 
 @in_vierstra_style

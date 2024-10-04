@@ -1,5 +1,5 @@
 from nmf_tools.plotting.modular_plot import uses_loaders
-from nmf_tools.plotting.modular_plot.interval_plot.plot_components import VerticalPlotComponent, SingleBPObjectsComponent, SignalPlotComponent, SegmentPlotComponent
+from nmf_tools.plotting.modular_plot.interval_plot.plot_components import VerticalPlotComponent, SingleBPObjectsComponent, SegmentPlotComponent
 
 import numpy as np
 
@@ -14,7 +14,6 @@ from genome_tools.plotting.ideogram import ideogram_plot
 from genome_tools.plotting.utils import clear_spines
 from genome_tools.plotting.pwm import plot_motif_logo
 from genome_tools.plotting.colors.cm import get_vocab_color
-from genome_tools.genomic_interval import df_to_variant_intervals
 from genome_tools.plotting.utils import format_axes_to_interval
 
 from nmf_tools import in_vierstra_style
@@ -23,6 +22,7 @@ from nmf_tools.plotting.matrices_barplots import component_barplot
 
 @uses_loaders(IdeogramLoader)
 class IdeogramComponent(VerticalPlotComponent):
+    
     @in_vierstra_style
     def _plot(self, data, ax, **kwargs):
         ideogram_plot(data.ideogram_data, data.interval.chrom, pos=data.interval.start, ax=ax, **kwargs)
@@ -31,6 +31,7 @@ class IdeogramComponent(VerticalPlotComponent):
 
 @uses_loaders(GencodeLoader)
 class GencodeComponent(VerticalPlotComponent):
+
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
@@ -49,6 +50,8 @@ class GencodeComponent(VerticalPlotComponent):
 
 @uses_loaders(FinemapLoader)
 class FinemapComponent(SingleBPObjectsComponent):
+
+    @in_vierstra_style
     def _plot(self, data, ax, **kwargs):
         data.positions = data.unique_finemap_df['start'] + 0.5
         data.values = data.unique_finemap_df['pip']
@@ -57,15 +60,8 @@ class FinemapComponent(SingleBPObjectsComponent):
 
 @uses_loaders(SignalLoader)
 class TrackComponent(VerticalPlotComponent):
-    def __init__(self, signal_files, smooth=True, step=10, bandwidth=150, **kwargs):
-        super().__init__(**kwargs)
-        self.loader_kwargs.update(dict(
-            step=step,
-            bandwidth=bandwidth,
-            signal_files=signal_files,
-            smooth=smooth,
-        ))
 
+    @in_vierstra_style
     def _plot(self, data, ax, **kwargs):
         ax.set_xlim(data.interval.start, data.interval.end)
         signal_plot(data.interval, data.signal, ax=ax, **kwargs)
@@ -73,20 +69,13 @@ class TrackComponent(VerticalPlotComponent):
 
 
 @uses_loaders(ComponentTracksLoader)
-class NMFTracksComponent(SignalPlotComponent):
-    def __init__(self, component_data=None, nmf_components=None, **kwargs):
-        if component_data is None:
-            raise ValueError("Component data must be provided for DNaseTracksComponent.")
-        super().__init__(**kwargs)
-        self.component_data = component_data
-        if nmf_components is not None:
-            self.loader_kwargs.update({'nmf_components': nmf_components})
+class NMFTracksComponent(VerticalPlotComponent):
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def _plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, component_data, **kwargs):
         density_axes = self.plot_component_tracks(data.interval, data.nmf_components,
-                                                  data.component_tracks, self.component_data,
+                                                  data.component_tracks, component_data,
                                                   gridspec_ax=ax, **kwargs)
         ax.set_xticks([])
         ax.set_yticks([])
@@ -146,18 +135,13 @@ class FootprintsComponent(SegmentPlotComponent):
 
 @uses_loaders(DHSIndexLoader, DHSLoadingsLoader)
 class DHSLoadingsComponent(VerticalPlotComponent):
-    def __init__(self, component_data=None, **kwargs):
-        if component_data is None:
-            raise ValueError("Component data must be provided for DHSLoadingsComponent.")
-        super().__init__(**kwargs)
-        self.component_data = component_data
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def _plot(self, data, ax, bp_width=50, **kwargs):
+    def _plot(self, data, ax, component_data, bp_width=50, **kwargs):
         ax.axis('off')
         axes = self.add_axes_at_middle_points(data.dhs_intervals, data.interval, ax=ax, bp_width=bp_width)
-        self.plot_barplots_for_dhs(data.dhs_intervals, axes, H=data.H, component_data=self.component_data)
+        self.plot_barplots_for_dhs(data.dhs_intervals, axes, H=data.H, component_data=component_data)
         return axes, ax
     
     @staticmethod
@@ -169,22 +153,14 @@ class DHSLoadingsComponent(VerticalPlotComponent):
 
 @uses_loaders(FootprintDatasetLoader)
 class FootprintTrackComponent(VerticalPlotComponent):
-    def __init__(self, fp_samples, kind='pp', fdr_cutoff=0.05, **kwargs):
-        super().__init__(**kwargs)
-        self.loader_kwargs.update({
-            'fp_samples': fp_samples,
-            'fdr_cutoff': fdr_cutoff,
-            })
-        assert kind in ['pp', 'obs/exp']
-        self.kind = kind
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def _plot(self, data, ax, smpl_idx=0, color='k', exp_color='C1', lw=0.5, **kwargs):
+    def _plot(self, data, ax, smpl_idx=0, color='k', exp_color='C1', lw=0.5, kind='pp', **kwargs):
         xs = self.squarify_array(np.arange(data.pp.shape[1] + 1) + data.interval.start)
-        if self.kind == 'pp':
+        if kind == 'pp':
             ax.plot(xs, np.repeat(data.pp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
-        elif self.kind == 'obs/exp':
+        elif kind == 'obs/exp':
             ax.plot(xs, np.repeat(data.obs[smpl_idx, :], 2), color=exp_color, lw=lw, **kwargs)
             ax.plot(xs, np.repeat(data.exp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
         format_axes_to_interval(ax, data.interval)
@@ -197,6 +173,7 @@ class FootprintTrackComponent(VerticalPlotComponent):
 
 @uses_loaders(MotifLoader)
 class MotifComponent(VerticalPlotComponent):
+
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
@@ -215,13 +192,6 @@ class MotifComponent(VerticalPlotComponent):
 
 @uses_loaders(AggregatedCAVLoader)
 class CAVComponent(SingleBPObjectsComponent):
-    def __init__(self, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0', **kwargs):
-        super().__init__(**kwargs)
-        self.loader_kwargs.update(dict(
-            fdr_tr=fdr_tr,
-            color=color,
-            notsignif_color=notsignif_color,
-        ))
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
@@ -242,30 +212,22 @@ class CAVComponent(SingleBPObjectsComponent):
 
 @uses_loaders(PerSampleCAVLoader)
 class NonAggregatedCAVComponent(CAVComponent):
-    def __init__(self, sample_id, **kwargs):
-        super().__init__(**kwargs)
-        self.loader_kwargs.update(dict(sample_id=sample_id))
+    ...
 
 
 @uses_loaders(AllelicReadsLoader)
 class AllelicReadsComponent(VerticalPlotComponent):
-    def __init__(self, sample_ids, only_variant_overlap=False, **kwargs):
-        super().__init__(**kwargs)
-        self.only_variant_overlap = only_variant_overlap
-        self.loader_kwargs.update({
-            'sample_ids': sample_ids,
-        })
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
-    def _plot(self, data, ax, **kwargs):
+    def _plot(self, data, ax, only_variant_overlap=False, **kwargs):
         reads = []
         for sample_id, sample_reads in data.reads.items():
             reads.extend(sample_reads)
         reads = sorted(reads, key=lambda x: x.base.replace('N', 'Z'))
         for r in reads:
             r.rectprops = dict(color=get_vocab_color(r.base, 'dna', default='grey'))
-        if self.only_variant_overlap:
+        if only_variant_overlap:
             reads = [r for r in reads if r.base != 'N']
         segment_plot(data.interval, reads, ax=ax)
         ax.set_yticks([])

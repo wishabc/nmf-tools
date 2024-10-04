@@ -22,9 +22,9 @@ class GencodeLoader(DataLoader):
 class FinemapLoader(DataLoader):
     __required_fields__ = ['finemap_df']
 
-    def _load(self, data: DataBundle, **kwargs):
+    def _load(self, data: DataBundle, region, trait, cs_id):
         finemap_df = self.preprocessor.finemap_df.query(
-            f'region == "{kwargs.pop("region")}" & trait == "{kwargs.pop("trait")}" & cs_id == {kwargs.pop("cs_id")}'
+            f'region == "{region}" & trait == "{trait}" & cs_id == {cs_id}'
         ).drop_duplicates('end')
         data.unique_finemap_df = finemap_df
         return data
@@ -33,7 +33,7 @@ class FinemapLoader(DataLoader):
 class SignalLoader(DataLoader):
     __required_fields__ = []
     
-    def _load(self, data, signal_files, smooth, step, bandwidth):
+    def _load(self, data, signal_files, smooth=True, step=20, bandwidth=150):
         if not smooth:
             bandwidth = 1
         segs = smooth_and_aggregate_per_nucleotide_signal(data.interval, signal_files,
@@ -45,7 +45,7 @@ class SignalLoader(DataLoader):
 class ComponentTracksLoader(DataLoader):
     __required_fields__ = ['cutcounts_files']
 
-    def _load(self, data: DataBundle, smooth, step, bandwidth, nmf_components=None, **kwargs):
+    def _load(self, data: DataBundle, smooth=True, step=20, bandwidth=150, nmf_components=None):
         if not smooth:
             bandwidth = 1
 
@@ -68,7 +68,7 @@ class SegmentsLoader(DataLoader):
     __required_fields__ = [] # needed to be set in subclasses, first element will be used as the df to extract intervals from
     __intervals_attr__ = 'intervals'
 
-    def _load(self, data: DataBundle, extra_columns=None, rectprops_columns=None, **kwargs):
+    def _load(self, data: DataBundle, extra_columns=None, rectprops_columns=None):
         if rectprops_columns is None:
             rectprops_columns = []
         if extra_columns is None:
@@ -105,7 +105,7 @@ class DHSLoadingsLoader(DataLoader):
 class FootprintDatasetLoader(DataLoader):
     __required_fields__ = ['fp_sample_data_file', 'fp_sample_data']
 
-    def _load(self, data: DataBundle, fp_samples, fdr_cutoff, **kwargs):
+    def _load(self, data: DataBundle, fp_samples, fdr_cutoff=0.05):
         dl = PosteriorStats(
             self.preprocessor.fp_sample_data_file,
             self.preprocessor.fp_sample_data.loc[fp_samples],
@@ -114,9 +114,9 @@ class FootprintDatasetLoader(DataLoader):
         dl._open_tabix_files()
         obs, exp, fdr, w = dl._load_data(data.interval)
 
-        prior = posterior.compute_prior_weighted(fdr, w, cutoff=0.05)
+        prior = posterior.compute_prior_weighted(fdr, w, cutoff=0.05) #????
         delta = posterior.compute_delta_prior(
-            obs, exp, fdr, dl.betas, cutoff=0.1
+            obs, exp, fdr, dl.betas, cutoff=0.1 #????
         )
         
         ll_on = posterior.log_likelihood(obs, exp, dl.disp_models, delta=delta, w=3)
@@ -137,7 +137,7 @@ class FootprintDatasetLoader(DataLoader):
 class MotifLoader(DataLoader):
     __required_fields__ = ['motif_annotations_path', 'motif_meta']
 
-    def _load(self, data: DataBundle, **kwargs):
+    def _load(self, data: DataBundle):
         interval_motif_annotations = TabixExtractor(self.preprocessor.motif_annotations_path,
                                                     columns=[
                                                         'chrom', 'start', 'end', 'fp_id',
@@ -159,7 +159,7 @@ class MotifLoader(DataLoader):
 class AggregatedCAVLoader(DataLoader):
     __required_fields__ = ['cavs_data']
 
-    def _load(self, data: DataBundle, fdr_tr, color, notsignif_color, **kwargs):
+    def _load(self, data: DataBundle, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
         filtered_cavs = filter_df_to_interval(self.preprocessor.cavs_data, self.interval)
         filtered_cavs['is_significant'] = filtered_cavs['min_fdr'] <= fdr_tr
         filtered_cavs['sig_es'] = np.clip(np.where(filtered_cavs['is_significant'], np.abs(filtered_cavs['logit_es_combined']), 0), 0, 2)
@@ -176,7 +176,7 @@ class AggregatedCAVLoader(DataLoader):
 class PerSampleCAVLoader(DataLoader):
     __required_fields__ = ['nonaggregated_cavs_data']
 
-    def _load(self, data: DataBundle, sample_id, fdr_tr, color, notsignif_color, **kwargs):
+    def _load(self, data: DataBundle, sample_id, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
         filtered_cavs = TabixExtractor(self.preprocessor.nonaggregated_cavs_data)[self.interval].query(f'sample_id == "{sample_id}"')
         filtered_cavs['is_significant'] = filtered_cavs['FDR_sample'] <= fdr_tr
         filtered_cavs['sig_es'] = np.clip(np.where(filtered_cavs['is_significant'], np.abs(filtered_cavs['logit_es']), 0), 0, 2)
@@ -190,12 +190,12 @@ class PerSampleCAVLoader(DataLoader):
 class AllelicReadsLoader(DataLoader):
     __required_fields__ = ['samples_metadata']
 
-    def _load(self, data: DataBundle, sample_ids, variant_interval, **kwargs):
+    def _load(self, data: DataBundle, sample_ids, variant_interval):
         if isinstance(sample_ids, (str, int, float)):
             sample_ids = [sample_ids]
         cram_paths = self.preprocessor.samples_metadata.loc[sample_ids, 'cram_file']
         reads = {}
         for sample_id, cram_path in zip(sample_ids, cram_paths):
-            reads[sample_id] = extract_allelic_reads(cram_path, variant_interval, data.interval, **kwargs)
+            reads[sample_id] = extract_allelic_reads(cram_path, variant_interval, data.interval)
         data.reads = reads
         return data

@@ -146,9 +146,6 @@ class SingleBPObjectsComponent(VerticalPlotComponent):
 
     kwargs are passed to the scatter plot function.
     """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
@@ -195,40 +192,10 @@ class SingleBPObjectsComponent(VerticalPlotComponent):
             ax.add_artist(ab)
             
         return ax
-    
-
-class SignalPlotComponent(VerticalPlotComponent):
-    """
-    A vertical plot component that plots signal data within a genomic interval.
-    self.plot accepts a data object with 'signal' field to plot the signal
-    on the y-axis with the genomic interval on the x-axis.
-
-    kwargs are passed to the signal plot function.
-    """
-    def __init__(self, smooth=True, step=10, bandwidth=150, **kwargs):
-        super().__init__(**kwargs)
-        self.loader_kwargs.update(dict(
-            step=step,
-            bandwidth=bandwidth,
-            smooth=smooth,
-        ))
-
-    @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
-    def _plot(self, data, ax, **kwargs):
-        signal = smooth_and_aggregate_per_nucleotide_signal(data.interval, data.signal_files, **self.loader_kwargs)
-        signal_plot(signal, data.interval, ax=ax, **kwargs)
-        return ax
 
 
 class SegmentPlotComponent(VerticalPlotComponent):
     __intervals_attr__ = 'intervals'
-
-    def __init__(self, rectprops_columns=None, **kwargs):
-        super().__init__(**kwargs)
-        self.loader_kwargs.update(dict(
-            rectprops_columns=rectprops_columns,
-        ))
 
     @in_vierstra_style
     @VerticalPlotComponent.set_xlim_interval
