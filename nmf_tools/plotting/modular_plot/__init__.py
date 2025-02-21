@@ -41,6 +41,17 @@ class DataBundle(LoggerMixin):
         self._initialized_attributes.add(name)
         super().__setattr__(name, value)
 
+    def copy(self):
+        """
+        Create a shallow copy of the data bundle.
+        """
+        data = DataBundle(self.interval)
+        for attr in self._initialized_attributes:
+            setattr(data, attr, getattr(self, attr))
+        for loader in self.processed_loaders:
+            data.processed_loaders.append(loader)
+        return data
+
 
 class PlotComponent(LoggerMixin):
     """
@@ -65,6 +76,41 @@ class PlotComponent(LoggerMixin):
 
         self.plot_kwargs = kwargs
 
+    @classmethod
+    def with_loaders(cls, *loaders, new_class_name=None):
+        """
+        Create a new class that inherits from the current class
+        but requires the specified loaders.
+        """
+        if new_class_name is None:
+            new_class_name = cls.__name__
+        new_class = type(
+            new_class_name,
+            (cls,),
+            {}
+        )
+        return uses_loaders(*loaders)(new_class)
+    
+    def load_data(self, preprocessor, interval, **loader_kwargs):
+        """
+        Load data for the plot component using the required loaders.
+        """
+        data = DataBundle(
+            interval,
+            logger_level=self.logger.level
+        )
+        for loader_class in self.__required_loaders__:
+            loader = loader_class(
+                preprocessor,
+                interval,
+                logger_level=self.logger.level
+            )
+            all_loader_kwargs = {**self.loader_kwargs, **loader_kwargs}
+            all_loader_kwargs = {k: v for k, v in all_loader_kwargs.items() if k in loader.get_fullargspec()}
+            data = loader.load(data, **all_loader_kwargs)
+            data.processed_loaders.append(loader_class)
+        return data
+
     def plot(self, data, ax, **plot_kwargs):
         """
         Wrapper for the plot method to pass the plot_kws to the plot method.
@@ -72,11 +118,13 @@ class PlotComponent(LoggerMixin):
         """
         kws = {**self.plot_kwargs, **plot_kwargs}
 
-        set_methods = [method.strip('set_') for method in dir(plt.Axes) if method.startswith('set_')]
+        set_methods = [method[len('set_'):] for method in dir(plt.Axes) if method.startswith('set_')]
         axes_kws = kws.pop('axes_kwargs', {})
         axes_kws = {key: axes_kws[key] for key in axes_kws if key in set_methods}
 
         axes = self._plot(data, ax, **kws)
+        if axes is None:
+            axes = ax
         for key in axes_kws:
             getattr(ax, 'set_' + key)(axes_kws[key])
 
@@ -141,7 +189,10 @@ class DataLoader(LoggerMixin):
         Validate the preprocessor fields and call the load method.
         """
         self._validate(**loader_kwargs)
-        return self._load(data, **loader_kwargs)
+        loaded_data = self._load(data, **loader_kwargs)
+        if loaded_data is None:
+            loaded_data = data
+        return loaded_data
     
     def _validate(self, **loader_kwargs):
         """
@@ -166,12 +217,17 @@ def uses_loaders(*loaders):
     """
     Class decorator to specify which data loaders a plot component requires.
     Updates the __required_loaders__ and __default_loader_kwargs__ attributes of the class.
+    Also updates the __init__ method to include the loader arguments in the signature.
+    If uses_loaders has been called multiple times, the loader arguments and the __init__ signature
+    are overwritten.
     """
     def decorator(cls):
         cls.__required_loaders__ = loaders
         loader_kwargs = _collect_all_kwargs(*loaders)
         cls.__default_loader_kwargs__ = {**cls.__default_loader_kwargs__, **loader_kwargs}
-        cls.__init__ = _update_signature(cls.__init__, loader_kwargs)
+        if not hasattr(cls, '__original_init__'):
+            cls.__original_init__ = cls.__init__
+        cls.__init__ = _update_signature(cls.__original_init__, loader_kwargs)
         return cls
     return decorator
 

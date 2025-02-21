@@ -22,6 +22,8 @@ class DataPreprocessor(LoggerMixin):
         for kwarg, value in get_data_kwargs.items():
             setattr(self, kwarg, value)
 
+        self.__loaders_cache__ = {}
+
     @staticmethod
     def _parse_interval(interval, interval_key: str):
         """
@@ -59,24 +61,11 @@ class DataPreprocessor(LoggerMixin):
         data : list[DataBundle]
             A list of DataBundle objects containing the data for each plot component
         """
-        data = []
-
-        for component in plot_components:
-            component_interval = self._parse_interval(interval, getattr(component, 'interval_key', None))
-            data_bundle = DataBundle(
-                component_interval,
-                logger_level=self.logger.level
+        return [
+            component.load_data(
+                self,
+                self._parse_interval(interval, getattr(component, 'interval_key', None)),
+                **kwargs
             )
-
-            required_loaders = component.__required_loaders__
-            for loader_class in required_loaders:
-                if loader_class not in data_bundle.processed_loaders:
-                    loader = loader_class(self, component_interval, logger_level=self.logger.level)
-                    passed_kwargs = {k: v for k, v in kwargs.items() if k in loader.get_fullargspec()}
-                    loader_kwargs = {**component.loader_kwargs, **passed_kwargs}
-                    data_bundle = loader.load(data_bundle, **loader_kwargs)
-                    data_bundle.processed_loaders.append(loader_class)
-            data.append(data_bundle)
-
-        return data
-
+            for component in plot_components
+        ]

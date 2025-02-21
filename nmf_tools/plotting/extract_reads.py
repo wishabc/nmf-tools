@@ -2,7 +2,7 @@ import pandas as pd
 import pysam
 import sys
 import numpy as np
-from genome_tools.genomic_interval import genomic_interval as GenomicInterval
+from genome_tools.genomic_interval import GenomicInterval
 
 
 

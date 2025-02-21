@@ -3,7 +3,7 @@ import numpy as np
 from nmf_tools.plotting.modular_plot import DataLoader, DataBundle
 from genome_tools.genomic_interval import df_to_genomic_intervals, filter_df_to_interval, df_to_variant_intervals
 
-from genome_tools.data.extractors import tabix_extractor as TabixExtractor
+from genome_tools.data.extractors import TabixExtractor
 from genome_tools.utils.signal import smooth_and_aggregate_per_nucleotide_signal
 
 from footprint_tools.cli.post import posterior_stats as PosteriorStats
