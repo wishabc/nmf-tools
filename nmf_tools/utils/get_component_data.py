@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from nmf_tools.matrix.reorder import reorder_components
+from nmf_tools.matrix_reordering.components_reordering import order_components_by_template
 
 W_old_path_default = '/net/seq/data2/projects/sabramov/SuperIndex/dnase-peak-calls/embeddings/NMF/p_weights.0.1pr_index/output/nmf/dhs_point1pr.28/dhs_point1pr.28.W.npy'
 component_data_old_path_default = '/home/sabramov/temp_component_metadata_dhs_point1pr_28.tsv'
@@ -15,7 +15,7 @@ def get_component_data(W, W_old_path=W_old_path_default, component_data_old_path
     W_old = np.load(W_old_path)
     component_data_old = pd.read_table(component_data_old_path)
 
-    reorder = reorder_components(W, W_old)
+    reorder = order_components_by_template(W, W_old).row_order
 
     component_data = pd.DataFrame({
         'index': component_data_old['index'],
