@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, csr_matrix
 
 def compute_labels(H, threshold=0.8, sep='_'):
     """
@@ -94,3 +94,27 @@ def compute_labels(H, threshold=0.8, sep='_'):
     
     return labels_str, sparse_membership, counts
 
+
+def compute_labels_absolute(H, absolute_threshold=0.05, purity_threshold=0.5, sep='_'):
+    membership = H > absolute_threshold
+    membership &= (H * membership).sum(axis=0) > purity_threshold * H.sum(axis=0)
+    
+    labels_str = np.array([
+        sep.join(map(str, 
+                     np.where(membership[:, j])[0]
+                     ))
+        for j in range(H.shape[1])
+    ])
+    
+    return labels_str, membership
+
+
+def create_label_matrix(labels):
+    unique_labels, inverse = np.unique(labels, return_inverse=True)
+    n = labels.shape[0]
+    m = unique_labels.shape[0]
+    data = np.ones(n, dtype=np.int8)
+    row_indices = inverse  # shape: (n,)
+    col_indices = np.arange(n, dtype=np.int32)
+    A = csr_matrix((data, (row_indices, col_indices)), shape=(m, n))
+    return A, unique_labels

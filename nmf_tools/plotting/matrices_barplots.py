@@ -144,6 +144,7 @@ def component_barplot_at_scale(
 def component_barplot_hcl(matrix, component_data, ax=None, separator_lw=0.5,
                           cluster_threshold=0.7, criterion='distance',
                           linkage_matrix=None, normalize_for_plotting=False,
+                          records_labels=None,
                           **kwargs):
     if linkage_matrix is None:
         linkage_matrix = hierarchical_clustering(matrix, **kwargs)
@@ -166,6 +167,14 @@ def component_barplot_hcl(matrix, component_data, ax=None, separator_lw=0.5,
 
     ax = plot_stacked_barplot(bottoms, tops, component_data.sort_values('index')['color'],
                          ax=ax, orient='horizontal')
+    
+    if records_labels is not None:
+        records_labels = records_order(records_labels)
+        ax.set_xticks(np.arange(len(records_labels)) + 0.5)
+        ax.set_xticklabels(records_labels, rotation=90)
+    else:
+        ax.set_xticks([])
+    ax.set_xlim(0, matrix.shape[1])
     
     for i in np.where(np.diff(records_order(clusters)) != 0)[0]:
         ax.axvline(i+1, color='k', lw=separator_lw)
@@ -206,12 +215,7 @@ def component_barplot_with_dendrogram(
         cluster_threshold=cluster_threshold,
         criterion=criterion,
         normalize_for_plotting=normalize_for_plotting,
+        records_labels=records_labels,
     )
-    if records_labels is not None:
-        ax2.set_xticks(np.arange(len(records_labels)) + 0.5)
-        ax2.set_xticklabels(records_labels, rotation=90)
-    else:
-        ax2.set_xticks([])
-    ax2.set_xlim(0, matrix.shape[1])
 
     return ax1, ax2, components_order, records_order
