@@ -92,7 +92,8 @@ def order_components_by_mean_loading(W):
 
 
 def order_components_by_cluster(W, cluster_labels=None, linkage_matrix=None,
-                                cluster_threshold=0.7, criterion='distance', **kwargs):
+                                cluster_threshold=0.7, criterion='distance',
+                                component_orders_by_cluster=None, **kwargs):
     """
     Sorts elements in each column according to the cluster they belong to.
     If the cluster_labels are not provided, they will be computed using hierarchical clustering.
@@ -103,6 +104,9 @@ def order_components_by_cluster(W, cluster_labels=None, linkage_matrix=None,
         Matrix to reorder.
     cluster_labels : np.ndarray (n_records,)
         Cluster labels for each record.
+    component_orders_by_cluster : dict
+        Dictionary with the order of components for each cluster.
+        If None, the order will be determined by the mean loading in each cluster.
     linkage_matrix : np.ndarray (n_records-1, 4)
         Linkage matrix for hierarchical clustering.
     cluster_threshold : float
@@ -123,7 +127,10 @@ def order_components_by_cluster(W, cluster_labels=None, linkage_matrix=None,
     component_orders = np.zeros(W.shape, dtype=int)
     for i in np.unique(cluster_labels):
         idx = cluster_labels == i
-        component_priority = np.argsort((W[:, idx] / W[:, idx].sum(axis=0)).mean(axis=1))[::-1]
+        if component_orders_by_cluster is None:
+            component_priority = np.argsort((W[:, idx] / W[:, idx].sum(axis=0)).mean(axis=1))[::-1]
+        else:
+            component_priority = component_orders_by_cluster[i]
         component_orders[:, idx] = component_priority[:, None]
     
     return MatrixReordering(row_order=component_orders.T)
