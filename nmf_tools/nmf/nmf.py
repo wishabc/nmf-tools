@@ -84,7 +84,6 @@ class NMFModel:
         NMF: X = W @ H
         NMF: samples x peaks = samples x components @ components x peaks
         """
-        X = data_to_sparse(X)
         W = self.model.fit_transform(
             X,
             W=W,
@@ -117,8 +116,6 @@ class NMFModel:
         NMF: X = W @ H
         NMF: samples x peaks = samples x components * components x peaks
         """
-        X = data_to_sparse(X)
-
         W, *_ = self.model._fit_transform(
             X=X,
             H=H,
@@ -138,7 +135,6 @@ class NMFModel:
         NMF: X.T = H.T @ W.T
         NMF: peaks x samples = peaks x components * components x samples
         """
-        X = data_to_sparse(X) # transposes
         projected_peaks, *_ = self.model._fit_transform(
             X=X.T,
             H=W.T,
