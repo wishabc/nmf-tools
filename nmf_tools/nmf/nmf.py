@@ -138,7 +138,7 @@ class NMFModel:
         projected_peaks, *_ = self.model._fit_transform(
             X=X.T,
             H=W.T,
-            W=H.T,
+            W=None if H is None else H.T,
             update_H=False,
             W_weights=H_weights[:, None],
             H_weights=W_weights[None, :]
