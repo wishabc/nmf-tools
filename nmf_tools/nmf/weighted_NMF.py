@@ -19,10 +19,9 @@ EPSILON = np.finfo(np.float32).eps
 
 class WeightedNMF(NMF):
 
-    def fit_transform(self, X, y=None, W=None, H=None, W_weights=None, H_weights=None, error_at_init=None):
+    def fit_transform(self, X, y=None, W=None, H=None, W_weights=None, H_weights=None):
 
         self._validate_params()
-        self.error_at_init = error_at_init
 
         X = self._validate_data(
             X, accept_sparse=("csr", "csc"), dtype=[np.float64, np.float32]
@@ -119,8 +118,9 @@ class WeightedNMF(NMF):
 
         return W
 
-    def _fit_transform(self, X, y=None, W=None, H=None, update_H=True, W_weights=None, H_weights=None):
+    def _fit_transform(self, X, y=None, W=None, H=None, update_H=True, W_weights=None, H_weights=None, error_at_init=None):
         check_non_negative(X, "NMF (input X)")
+        self.error_at_init = error_at_init
 
         print(f'Weights stats: Median: {np.median(W_weights)}, Sum: {np.sum(W_weights)}, Max: {np.max(W_weights)}')
         
