@@ -112,16 +112,10 @@ class NMFModel:
         H = self.model.components_ # components x peaks
         return W, H
 
-
     @validate_input_args
-    def reconstruction_error(self, X, *, W=None, H=None, W_weights=None, H_weights=None, model=None, **model_kwargs):
-        if model is not None:
-            assert isinstance(model, WeightedNMF), "Model should be an instance of WeightedNMF"
-            assert model.components_ == self.model.components_
-            model = self.model
-        else:
-            model = clone(self.model)
-        model.set_params(**model_kwargs)
+    def reconstruction_error(self, X, *, W=None, H=None, W_weights=None, H_weights=None, **model_kwargs):
+        model: WeightedNMF = clone(self.model)
+        model = model.set_params(**model_kwargs)
         W, H = model._check_w_h(X, W, H, update_H=False)
 
         return model.reconstruction_error(
@@ -151,7 +145,6 @@ class NMFModel:
         )
         return W # samples x components 
 
-
     @validate_input_args
     def project_peaks(self, X, W, *, H=None, W_weights=None, H_weights=None, error_at_init=None):
         """
@@ -170,7 +163,6 @@ class NMFModel:
             error_at_init=error_at_init
         )
         return projected_peaks.T
-
 
     @validate_input_args
     def update_WH(self, X_initial, X_new, W, H, *, W_weights=None, H_weights=None):
