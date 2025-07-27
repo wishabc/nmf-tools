@@ -115,8 +115,8 @@ class NMFModel:
     @validate_input_args
     def reconstruction_error(self, X, *, W=None, H=None, W_weights=None, H_weights=None, **model_kwargs):
         model: WeightedNMF = clone(self.model)
-        model = model.set_params(**model_kwargs, update_H=True)
-        W, H = model._check_w_h(X, W, H, update_H=False)
+        model = model.set_params(**model_kwargs)
+        W, H = model._check_w_h(X, W, H, update_H=True)
 
         return model.reconstruction_error(
             X=X,
