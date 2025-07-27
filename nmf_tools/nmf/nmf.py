@@ -79,7 +79,7 @@ class NMFModel:
     def _run_fit_transform(self, X, *, 
                         H=None, W=None, W_weights=None, H_weights=None, error_at_init=None,
                         update_H=True):
-        W, *_ = self.model._fit_transform(
+        W, H, *_ = self.model._fit_transform(
             X=X,
             H=H,
             W=W,
@@ -88,7 +88,7 @@ class NMFModel:
             H_weights=H_weights[None, :],
             error_at_init=error_at_init
         )
-        return W 
+        return W, H
 
     @validate_input_args
     def fit_transform(self, X, *, W=None, H=None, W_weights=None, H_weights=None, error_at_init=None):
@@ -99,7 +99,7 @@ class NMFModel:
         NMF: X = W @ H
         NMF: samples x peaks = samples x components @ components x peaks
         """
-        W = self._run_fit_transform(
+        W, H = self._run_fit_transform(
             X=X,
             H=H,
             W=W,
@@ -134,7 +134,7 @@ class NMFModel:
         NMF: X = W @ H
         NMF: samples x peaks = samples x components * components x peaks
         """
-        W = self._run_fit_transform(
+        W, _ = self._run_fit_transform(
             X=X,
             H=H,
             W=W,
@@ -153,7 +153,7 @@ class NMFModel:
         NMF: X.T = H.T @ W.T
         NMF: peaks x samples = peaks x components * components x samples
         """
-        projected_peaks, *_ = self.model._fit_transform(
+        projected_peaks, _ = self.model._fit_transform(
             X=X.T,
             H=W.T,
             W=None if H is None else H.T,
