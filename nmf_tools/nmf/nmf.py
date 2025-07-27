@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.decomposition import NMF
+from sklearn.base import clone
+
 from .weighted_NMF import WeightedNMF
 import scipy.sparse as sp
 from nmf_tools.matrix_reordering.components_reordering import order_components_by_template
@@ -45,7 +46,7 @@ def validate_input_args(func):
         assert W_weights.shape[0] == X.shape[0]
         assert H_weights.shape[0] == X.shape[1]
         assert W_weights.ndim == 1 and H_weights.ndim == 1, 'Weights are expected to be 1D arrays'
-        return func(self, X=X, W_weights=W_weights, H_weights=H_weights, **kwargs)
+        return func(self, X=X, *args, W_weights=W_weights, H_weights=H_weights, **kwargs)
 
     return wrapper
     
@@ -76,7 +77,7 @@ class NMFModel:
         self.model = WeightedNMF(**params)
 
     @validate_input_args
-    def fit(self, X, *, W=None, H=None, W_weights=None, H_weights=None):
+    def fit_transform(self, X, *, W=None, H=None, W_weights=None, H_weights=None):
         """
         X: samples x peaks
         W: samples x components
@@ -96,10 +97,19 @@ class NMFModel:
         W = W.astype(X.dtype)
         H = H.astype(X.dtype)
         return W, H
-    
+
+
     @validate_input_args
-    def get_loss(self, X, W, H, *, W_weights=None, H_weights=None):
-        return self.model.reconstruction_error(
+    def reconstruction_error(self, X, W, H, *, W_weights=None, H_weights=None, model=None, **model_kwargs):
+        if model is not None:
+            assert isinstance(model, WeightedNMF), "Model should be an instance of WeightedNMF"
+            assert model.components_ == self.model.components_
+            model = self.model
+        else:
+            model = clone(self.model)
+        model.set_params(**model_kwargs)
+
+        return model.reconstruction_error(
             X=X,
             W=W,
             H=H,

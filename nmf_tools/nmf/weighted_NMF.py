@@ -19,9 +19,10 @@ EPSILON = np.finfo(np.float32).eps
 
 class WeightedNMF(NMF):
 
-    def fit_transform(self, X, y=None, W=None, H=None, W_weights=None, H_weights=None):
+    def fit_transform(self, X, y=None, W=None, H=None, W_weights=None, H_weights=None, error_at_init=None):
 
         self._validate_params()
+        self.error_at_init = error_at_init
 
         X = self._validate_data(
             X, accept_sparse=("csr", "csc"), dtype=[np.float64, np.float32]
@@ -155,7 +156,8 @@ class WeightedNMF(NMF):
                 update_H,
                 self.verbose,
                 W_weights=W_weights,
-                H_weights=H_weights
+                H_weights=H_weights,
+                error_at_init=self.error_at_init
 
             )
         else:
