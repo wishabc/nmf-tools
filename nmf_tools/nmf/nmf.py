@@ -104,8 +104,8 @@ class NMFModel:
             H=H,
             W=W,
             update_H=True,
-            W_weights=W_weights[:, None],
-            H_weights=H_weights[None, :],
+            W_weights=W_weights,
+            H_weights=H_weights,
             error_at_init=error_at_init
         )
 
@@ -145,8 +145,8 @@ class NMFModel:
             H=H,
             W=W,
             update_H=False,
-            W_weights=W_weights[:, None],
-            H_weights=H_weights[None, :],
+            W_weights=W_weights,
+            H_weights=H_weights,
             error_at_init=error_at_init
         )
         return W # samples x components 
@@ -165,8 +165,8 @@ class NMFModel:
             H=W.T,
             W=None if H is None else H.T,
             update_H=False,
-            W_weights=H_weights[:, None],
-            H_weights=W_weights[None, :],
+            W_weights=H_weights,
+            H_weights=W_weights,
             error_at_init=error_at_init
         )
         return projected_peaks.T
