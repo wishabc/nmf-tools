@@ -76,8 +76,22 @@ class NMFModel:
     
         self.model = WeightedNMF(**params)
 
+    def _run_fit_transform(self, X, *, 
+                        H=None, W=None, W_weights=None, H_weights=None, error_at_init=None,
+                        update_H=True):
+        W, *_ = self.model._fit_transform(
+            X=X,
+            H=H,
+            W=W,
+            update_H=update_H,
+            W_weights=W_weights[:, None],
+            H_weights=H_weights[None, :],
+            error_at_init=error_at_init
+        )
+        return W 
+
     @validate_input_args
-    def fit_transform(self, X, *, W=None, H=None, W_weights=None, H_weights=None):
+    def fit_transform(self, X, *, W=None, H=None, W_weights=None, H_weights=None, error_at_init=None):
         """
         X: samples x peaks
         W: samples x components
@@ -85,22 +99,22 @@ class NMFModel:
         NMF: X = W @ H
         NMF: samples x peaks = samples x components @ components x peaks
         """
-        W = self.model.fit_transform(
-            X,
-            W=W,
+        W = self._run_fit_transform(
+            X=X,
             H=H,
+            W=W,
+            update_H=True,
             W_weights=W_weights[:, None],
             H_weights=H_weights[None, :],
+            error_at_init=error_at_init
         )
 
         H = self.model.components_ # components x peaks
-        W = W.astype(X.dtype)
-        H = H.astype(X.dtype)
         return W, H
 
 
     @validate_input_args
-    def reconstruction_error(self, X, W, H, *, W_weights=None, H_weights=None, model=None, **model_kwargs):
+    def reconstruction_error(self, X, *, W=None, H=None, W_weights=None, H_weights=None, model=None, **model_kwargs):
         if model is not None:
             assert isinstance(model, WeightedNMF), "Model should be an instance of WeightedNMF"
             assert model.components_ == self.model.components_
@@ -108,6 +122,7 @@ class NMFModel:
         else:
             model = clone(self.model)
         model.set_params(**model_kwargs)
+        W, H = model._check_w_h(X, W, H, update_H=False)
 
         return model.reconstruction_error(
             X=X,
@@ -117,28 +132,28 @@ class NMFModel:
             H_weights=H_weights[None, :]
         )
 
-
     @validate_input_args
-    def project_samples(self, X, H, *, W=None, W_weights=None, H_weights=None):
+    def project_samples(self, X, H, *, W=None, W_weights=None, H_weights=None, error_at_init=None):
         """
         X: samples x peaks
         H: components x peaks
         NMF: X = W @ H
         NMF: samples x peaks = samples x components * components x peaks
         """
-        W, *_ = self.model._fit_transform(
+        W = self._run_fit_transform(
             X=X,
             H=H,
             W=W,
             update_H=False,
             W_weights=W_weights[:, None],
             H_weights=H_weights[None, :],
+            error_at_init=error_at_init
         )
         return W # samples x components 
 
 
     @validate_input_args
-    def project_peaks(self, X, W, *args, H=None, W_weights=None, H_weights=None):
+    def project_peaks(self, X, W, *, H=None, W_weights=None, H_weights=None, error_at_init=None):
         """
         X: samples x peaks
         W: samples x components
@@ -151,13 +166,14 @@ class NMFModel:
             W=None if H is None else H.T,
             update_H=False,
             W_weights=H_weights[:, None],
-            H_weights=W_weights[None, :]
+            H_weights=W_weights[None, :],
+            error_at_init=error_at_init
         )
         return projected_peaks.T
 
 
     @validate_input_args
-    def update_WH(self, X_initial, X_new, W, H, *args, W_weights=None, H_weights=None):
+    def update_WH(self, X_initial, X_new, W, H, *, W_weights=None, H_weights=None):
         X_new = data_to_sparse(X_new)
         old_n_samples = X_initial.shape[0]
         X = sp.vstack([X_initial, X_new])

@@ -120,7 +120,6 @@ class WeightedNMF(NMF):
 
     def _fit_transform(self, X, y=None, W=None, H=None, update_H=True, W_weights=None, H_weights=None, error_at_init=None):
         check_non_negative(X, "NMF (input X)")
-        self.error_at_init = error_at_init
 
         print(f'Weights stats: Median: {np.median(W_weights)}, Sum: {np.sum(W_weights)}, Max: {np.max(W_weights)}')
         
@@ -157,8 +156,7 @@ class WeightedNMF(NMF):
                 self.verbose,
                 W_weights=W_weights,
                 H_weights=H_weights,
-                error_at_init=self.error_at_init
-
+                error_at_init=error_at_init
             )
         else:
             raise ValueError("Invalid solver parameter '%s'." % self.solver)
