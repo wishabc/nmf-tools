@@ -25,12 +25,14 @@ __license__ = 'GPL3'
 
 import os
 from matplotlib import style
+import functools
 
 def in_vierstra_style(func):
     '''
     Decorator to apply common style to a function that generates a plot.
     Style is defined in vierstragroup_matplotlibrc.
     '''
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         style_file_path = os.path.join(os.path.dirname(__file__), 'vierstragroup_matplotlibrc')
 
