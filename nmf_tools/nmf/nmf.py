@@ -38,7 +38,6 @@ def get_mock_weights(X: sp.csr_matrix, which='W'):
 
 def validate_input_args(func):
     def wrapper(self, X, *args, W_weights=None, H_weights=None, **kwargs):
-        self._check_params(X)
         X = data_to_sparse(X)
         if W_weights is None:
             W_weights = get_mock_weights(X, which='W')
@@ -117,6 +116,7 @@ class NMFModel:
     def reconstruction_error(self, X, *, W=None, H=None, W_weights=None, H_weights=None, **model_kwargs):
         model: WeightedNMF = clone(self.model)
         model = model.set_params(**model_kwargs)
+        model._check_params(X)
         W, H = model._check_w_h(X, W, H, update_H=True)
 
         return model.reconstruction_error(
