@@ -48,7 +48,7 @@ def order_matrix(matrix,
 
 
 @in_vierstra_style
-def plot_stacked_barplot(bottoms, tops, colors, xvals=None, ax=None, orient='horizontal'):
+def plot_stacked_barplot(bottoms, tops, colors, xvals=None, ax=None, orient='horizontal', **kwargs):
     assert bottoms.shape == tops.shape
     assert bottoms.shape[0] == len(colors)
 
@@ -62,11 +62,11 @@ def plot_stacked_barplot(bottoms, tops, colors, xvals=None, ax=None, orient='hor
         fig, ax = plt.subplots(figsize=(len(xvals)/200, 2) if orient == 'horizontal' else (2, len(xvals)/200))
     for btms, tps, color in zip(fb_bottoms, fb_tops, colors):
         if orient == 'horizontal':
-            ax.fill_between(xvals, btms, tps, lw=0, color=color)
+            ax.fill_between(xvals, btms, tps, lw=0, color=color, **kwargs)
             ax.set_xlim(0, xvals[-1])
             ax.set_ylim(0, tops.max())
         elif orient == 'vertical':
-            ax.fill_betweenx(xvals, btms, tps, lw=0, color=color)
+            ax.fill_betweenx(xvals, btms, tps, lw=0, color=color, **kwargs)
             ax.set_ylim(0, xvals[-1])
             ax.set_xlim(0, tops.max())
 
@@ -81,7 +81,7 @@ def component_barplot(matrix, component_data, box_lw=0.15, ax=None, **order_matr
     )
 
     ax = plot_stacked_barplot(bottoms, tops, component_data.sort_values('index')['color'],
-                              ax=ax, orient='horizontal')
+                              ax=ax, orient='horizontal', rasterized=rasterized)
 
     ax.set_xticks([])
     ax.set_yticks([])
