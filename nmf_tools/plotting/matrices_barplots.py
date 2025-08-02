@@ -81,7 +81,7 @@ def component_barplot(matrix, component_data, box_lw=0.15, ax=None, **order_matr
     )
 
     ax = plot_stacked_barplot(bottoms, tops, component_data.sort_values('index')['color'],
-                              ax=ax, orient='horizontal', rasterized=rasterized)
+                              ax=ax, orient='horizontal')
 
     ax.set_xticks([])
     ax.set_yticks([])
