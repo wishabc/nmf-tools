@@ -7,6 +7,7 @@ import matplotlib.gridspec as gridspec
 
 from skimage.transform import downscale_local_mean
 
+
 def interpolate_matrix(matrix, n_downs=1000):
     """
     Downsamples a 2D matrix by averaging blocks using vectorized operations.

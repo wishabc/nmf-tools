@@ -74,14 +74,17 @@ def plot_stacked_barplot(bottoms, tops, colors, xvals=None, ax=None, orient='hor
 
 
 @in_vierstra_style
-def component_barplot(matrix, component_data, box_lw=0.15, ax=None, **order_matrix_kwargs):
+def component_barplot(matrix, component_data, box_lw=0.15, ax=None, plotting_kwargs=None, **order_matrix_kwargs):
     bottoms, tops, components_order, records_order = order_matrix(
         matrix,
         **order_matrix_kwargs
     )
 
+    if plotting_kwargs is None:
+        plotting_kwargs = {}
+
     ax = plot_stacked_barplot(bottoms, tops, component_data.sort_values('index')['color'],
-                              ax=ax, orient='horizontal')
+                              ax=ax, orient='horizontal', **plotting_kwargs)
 
     ax.set_xticks([])
     ax.set_yticks([])
