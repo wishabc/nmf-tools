@@ -79,7 +79,7 @@ def broadcast_zip(*args, **kwargs):
     kw_iterables = {}
     for key, value in kwargs.items():
         if isinstance(value, BroadcastIter):
-            kw_iterables[key] = next(value.data)
+            kw_iterables[key] = iter(value.data)
             lengths.add(value.length)
         else:
             kw_iterables[key] = itertools.repeat(value)
