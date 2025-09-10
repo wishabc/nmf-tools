@@ -4,6 +4,9 @@ from sklearn.base import clone
 from .weighted_NMF import WeightedNMF
 import scipy.sparse as sp
 from nmf_tools.matrix_reordering.components_reordering import order_components_by_template
+import os
+import pandas as pd
+
 
 dtype = np.float64
 
@@ -14,6 +17,7 @@ def get_transform_params_WH_to_ref(W_new, H_new, W_ref, H_ref):
     coefs /= (H_new * H_new)[reorder, :].sum(axis=1) / (H_ref * H_ref).sum(axis=1)
     coefs = np.sqrt(coefs)
     return reorder, coefs
+
 
 def apply_transform_WH(W, H, transform_params):
     reorder, coefs = transform_params
@@ -34,6 +38,22 @@ def get_mock_weights(X: sp.csr_matrix, which='W'):
     else:
         raise ValueError(f'Unknown weights type: {which}')
     return np.ones(shape, dtype=dtype)
+
+
+def read_weights(weights_path, shape, sample_names=None) -> np.ndarray:
+    if weights_path is not None:
+        if os.path.splitext(weights_path)[-1] == 'npy':
+            weights_vector = np.load(weights_path)
+        else:
+            weights_df = pd.read_table(weights_path).set_index('id')
+            if sample_names is not None:
+                weights_df = weights_df.loc[sample_names]
+            weights_vector = weights_df['weight'].to_numpy().astype(dtype=dtype)
+            assert np.all(np.isfinite(weights_vector)), 'Some provided weights are not finite!'
+    else:
+        weights_vector = np.ones(shape, dtype=dtype)
+    
+    return weights_vector / weights_vector.sum() * weights_vector.shape[0]
 
 
 def validate_input_args(func):
@@ -194,4 +214,3 @@ class NMFModel:
         )
 
         return new_W, new_H
-    
