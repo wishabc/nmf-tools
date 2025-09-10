@@ -30,11 +30,10 @@ def data_to_sparse(X: np.ndarray) -> sp.csr_matrix:
     return sp.coo_matrix(X).tocsr().astype(dtype)
 
 
-def _normalize_weights(weights_vector: np.ndarray, dtype=np.float32) -> np.ndarray:
-    weights_vector = weights_vector.astype(dtype)
-    if not np.all(np.isfinite(weights_vector)):
+def _normalize_weights(weights: pd.Series) -> np.ndarray:
+    if not np.all(np.isfinite(weights)):
         raise ValueError("Some provided weights are not finite!")
-    return weights_vector / weights_vector.sum() * weights_vector.shape[0]
+    return weights / weights.sum() * weights.shape[0]
 
 
 def get_mock_weights(X: sp.csr_matrix, which='W', dtype=np.float32) -> np.ndarray:
@@ -45,17 +44,20 @@ def get_mock_weights(X: sp.csr_matrix, which='W', dtype=np.float32) -> np.ndarra
 
 def read_weights(weights_path: str,
                  names=None,
-                 dtype=np.float32) -> np.ndarray:
+                 dtype=np.float32) -> pd.Series:
     ext = os.path.splitext(weights_path)[-1]
     if ext == '.npy':
-        weights_vector = np.load(weights_path)
+        weights = np.load(weights_path)
+        if names is None:
+            names = np.arange(len(weights))
+        weights = pd.Series(weights, index=names)
     else:
         weights_df = pd.read_table(weights_path).set_index('id')
         if names is not None:
             weights_df = weights_df.loc[names]
-        weights_vector = weights_df['weight'].to_numpy()
+        weights = weights_df['weight']
 
-    return _normalize_weights(weights_vector, dtype=dtype)
+    return _normalize_weights(weights, dtype=dtype)
 
 
 
