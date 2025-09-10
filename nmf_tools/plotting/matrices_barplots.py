@@ -225,3 +225,55 @@ def component_barplot_with_dendrogram(
     )
 
     return ax1, ax2, components_order, records_order
+
+
+def plot_component_top_barplot(data, labels, color, ax=None, top_count=15):
+    n_samples = data.shape[0]
+    top_count_actual = min(top_count, n_samples)
+
+    sorted_indices = np.argsort(data)[-top_count_actual:]
+    sorted_data = data[sorted_indices]
+    sorted_names = labels[sorted_indices]
+
+    ax.barh(np.arange(top_count_actual), sorted_data, color=color)
+    ax.set_yticks(np.arange(top_count_actual))
+    ax.tick_params(length=3, pad=1)
+    ax.set_ylim(top_count_actual - top_count - 0.5, top_count_actual - 0.5)
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=4)
+    ax.set_yticklabels(sorted_names, ha='right', va='center', fontsize=4, color='k')
+    if len(sorted_data) > 0:
+        ax.set_xlim(0, 1.1 * sorted_data.max())
+    return ax
+
+
+def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_count=10, common_scale=False, fig=None, wspace=1, hspace=0.3):
+    n_components = W.shape[0]
+
+    ncols = int(np.ceil(ncols))
+    nrows = int(np.ceil(n_components / ncols))
+    
+    if fig is None:
+        fig = plt.gcf()
+
+    gs = gridspec.GridSpec(nrows, ncols, wspace=wspace, hspace=hspace)
+
+    axes = []
+    xlims = []
+    for i, (_, row) in enumerate(component_data.iterrows()):
+        ax = fig.add_subplot(gs[i])
+        # component_is_major = np.argmax(W, axis=0) == row['index']
+        
+        ax = plot_component_top_barplot(
+            W[row['index'], :],
+            annotations, 
+            color=row['color'], 
+            ax=ax,
+            top_count=top_count
+        )
+        ax.set_title(f'{row["name"]}', fontsize=4, pad=2)
+        xlims.append(ax.get_xlim())
+        axes.append(ax)
+    if common_scale:
+        for ax in axes:
+            ax.set_xlim(0, max(xlims, key=lambda x: x[1])[1])
+    return axes
