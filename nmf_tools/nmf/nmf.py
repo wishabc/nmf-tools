@@ -104,6 +104,8 @@ class NMFModel:
     def _run_fit_transform(self, X, *, 
                         H=None, W=None, W_weights=None, H_weights=None, error_at_init=None,
                         update_H=True):
+        W_weights = np.asarray(W_weights)
+        H_weights = np.asarray(H_weights)
         W, H, *_ = self.model._fit_transform(
             X=X,
             H=H,
