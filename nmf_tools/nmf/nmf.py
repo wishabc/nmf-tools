@@ -131,8 +131,6 @@ class NMFModel:
             H_weights=H_weights,
             error_at_init=error_at_init
         )
-
-        H = self.model.components_ # components x peaks
         return W, H
 
     @validate_input_args
