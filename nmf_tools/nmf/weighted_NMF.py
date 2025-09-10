@@ -120,8 +120,6 @@ class WeightedNMF(NMF):
 
     def _fit_transform(self, X, y=None, W=None, H=None, update_H=True, W_weights=None, H_weights=None, error_at_init=None):
         check_non_negative(X, "NMF (input X)")
-
-        print(f'Weights stats: Median: {np.median(W_weights)}, Sum: {np.sum(W_weights)}, Max: {np.max(W_weights)}')
         
         # check parameters
         self._check_params(X)

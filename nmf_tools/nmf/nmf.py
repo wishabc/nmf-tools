@@ -190,32 +190,32 @@ class NMFModel:
         )
         return projected_peaks.T
 
-    @validate_input_args
-    def update_WH(self, X_initial, X_new, W, H, *, W_weights=None, H_weights=None):
-        X_new = data_to_sparse(X_new)
-        old_n_samples = X_initial.shape[0]
-        X = sp.vstack([X_initial, X_new])
-        new_W = self.project_samples(X, H, W_weights=W_weights, H_weights=H_weights)
+    # @validate_input_args
+    # def update_WH(self, X_initial, X_new, W, H, *, W_weights=None, H_weights=None):
+    #     X_new = data_to_sparse(X_new)
+    #     old_n_samples = X_initial.shape[0]
+    #     X = sp.vstack([X_initial, X_new])
+    #     new_W = self.project_samples(X, H, W_weights=W_weights, H_weights=H_weights)
 
-        transform_params = get_transform_params_WH_to_ref(
-            new_W[:old_n_samples, :],
-            new_H,
-            W,
-            H
-        )
+    #     transform_params = get_transform_params_WH_to_ref(
+    #         new_W[:old_n_samples, :],
+    #         new_H,
+    #         W,
+    #         H
+    #     )
 
 
-        new_H = self.project_peaks(
-            X, new_W,
-            W_weights=W_weights,
-            H_weights=H_weights
-        )
+    #     new_H = self.project_peaks(
+    #         X, new_W,
+    #         W_weights=W_weights,
+    #         H_weights=H_weights
+    #     )
 
-        new_W[:old_n_samples, :], new_H = get_transform_params_WH_to_ref(
-            new_W[:old_n_samples, :], 
-            new_H,
-            W,
-            H
-        )
+    #     new_W[:old_n_samples, :], new_H = get_transform_params_WH_to_ref(
+    #         new_W[:old_n_samples, :], 
+    #         new_H,
+    #         W,
+    #         H
+    #     )
 
-        return new_W, new_H
+    #     return new_W, new_H
