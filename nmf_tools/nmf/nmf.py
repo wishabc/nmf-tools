@@ -39,7 +39,7 @@ def _normalize_weights(weights: pd.Series) -> np.ndarray:
 def get_mock_weights(X: sp.csr_matrix, which='W', dtype=np.float32) -> np.ndarray:
     assert which in ('W', 'H')
     shape = X.shape[0] if which == 'W' else X.shape[1]
-    return _normalize_weights(np.ones(shape, dtype=dtype), dtype=dtype)
+    return _normalize_weights(np.ones(shape, dtype=dtype))
 
 
 def read_weights(weights_path: str,
@@ -57,7 +57,7 @@ def read_weights(weights_path: str,
             weights_df = weights_df.loc[names]
         weights = weights_df['weight']
 
-    return _normalize_weights(weights, dtype=dtype)
+    return _normalize_weights(weights)
 
 
 
