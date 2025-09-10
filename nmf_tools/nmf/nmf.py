@@ -30,30 +30,33 @@ def data_to_sparse(X: np.ndarray) -> sp.csr_matrix:
     return sp.coo_matrix(X).tocsr().astype(dtype)
 
 
-def get_mock_weights(X: sp.csr_matrix, which='W'):
-    if which == 'W':
-        shape = X.shape[0]
-    elif which == 'H':
-        shape = X.shape[1]
-    else:
-        raise ValueError(f'Unknown weights type: {which}')
-    return np.ones(shape, dtype=dtype)
-
-
-def read_weights(weights_path, shape, sample_names=None) -> np.ndarray:
-    if weights_path is not None:
-        if os.path.splitext(weights_path)[-1] == 'npy':
-            weights_vector = np.load(weights_path)
-        else:
-            weights_df = pd.read_table(weights_path).set_index('id')
-            if sample_names is not None:
-                weights_df = weights_df.loc[sample_names]
-            weights_vector = weights_df['weight'].to_numpy().astype(dtype=dtype)
-            assert np.all(np.isfinite(weights_vector)), 'Some provided weights are not finite!'
-    else:
-        weights_vector = np.ones(shape, dtype=dtype)
-    
+def _normalize_weights(weights_vector: np.ndarray, dtype=np.float32) -> np.ndarray:
+    weights_vector = weights_vector.astype(dtype)
+    if not np.all(np.isfinite(weights_vector)):
+        raise ValueError("Some provided weights are not finite!")
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
+
+
+def get_mock_weights(X: sp.csr_matrix, which='W', dtype=np.float32) -> np.ndarray:
+    assert which in ('W', 'H')
+    shape = X.shape[0] if which == 'W' else X.shape[1]
+    return _normalize_weights(np.ones(shape, dtype=dtype), dtype=dtype)
+
+
+def read_weights(weights_path: str,
+                 names=None,
+                 dtype=np.float32) -> np.ndarray:
+    ext = os.path.splitext(weights_path)[-1]
+    if ext == '.npy':
+        weights_vector = np.load(weights_path)
+    else:
+        weights_df = pd.read_table(weights_path).set_index('id')
+        if names is not None:
+            weights_df = weights_df.loc[names]
+        weights_vector = weights_df['weight'].to_numpy()
+
+    return _normalize_weights(weights_vector, dtype=dtype)
+
 
 
 def validate_input_args(func):
