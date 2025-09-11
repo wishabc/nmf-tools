@@ -13,38 +13,6 @@ from nmf_tools.matrix_reordering.components_reordering import order_components
 from nmf_tools.matrix_reordering.hcluster import hierarchical_clustering
 
 
-def order_matrix(matrix,
-                 order_components_by='primary',
-                 order_components_kwargs=None,
-                 order_records_by='primary',
-                 order_records_kwargs=None,
-                 normalize_for_plotting=True):
-    
-    if order_components_kwargs is None:
-        order_components_kwargs = {}
-    if order_records_kwargs is None:
-        order_records_kwargs = {}
-    
-    components_order = order_components(matrix,
-                            by=order_components_by,
-                            **order_components_kwargs)
-
-    records_order = order_records(matrix,
-                            by=order_records_by,
-                            **order_records_kwargs)
-    
-    if normalize_for_plotting:
-        matrix = matrix / matrix.sum(axis=0, keepdims=True)
-   
-    sorted_matrix = components_order(matrix)
-    tops = sorted_matrix.cumsum(axis=0)
-    bottoms = tops - sorted_matrix
-
-    inverse_component_order = components_order.inv
-    tops = records_order(inverse_component_order(tops))
-    bottoms = records_order(inverse_component_order(bottoms))
-  
-    return tops, bottoms, components_order, records_order
 
 
 @in_vierstra_style
@@ -246,7 +214,7 @@ def plot_component_top_barplot(data, labels, color, ax=None, top_count=15):
     return ax
 
 
-def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_count=10, common_scale=False, fig=None, wspace=1, hspace=0.3):
+def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_count=10, common_scale=False, fig=None, wspace=1, hspace=0.3, component_is_major=False):
     n_components = W.shape[0]
 
     ncols = int(np.ceil(ncols))
@@ -261,14 +229,20 @@ def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_c
     xlims = []
     for i, (_, row) in enumerate(component_data.iterrows()):
         ax = fig.add_subplot(gs[i])
-        # component_is_major = np.argmax(W, axis=0) == row['index']
-        
+        W_slice = W[row['index'], :]
+        if component_is_major:
+            major_comp_mask = np.argmax(W, axis=0) == row['index']
+            W_slice = W_slice[major_comp_mask]
+            annots = annotations[major_comp_mask]
+        else:
+            annots = annotations
+        tc = min(top_count, W_slice.shape[0])
         ax = plot_component_top_barplot(
-            W[row['index'], :],
-            annotations, 
-            color=row['color'], 
+            W_slice,
+            annots,
+            color=row['color'],
             ax=ax,
-            top_count=top_count
+            top_count=tc
         )
         ax.set_title(f'{row["name"]}', fontsize=4, pad=2)
         xlims.append(ax.get_xlim())

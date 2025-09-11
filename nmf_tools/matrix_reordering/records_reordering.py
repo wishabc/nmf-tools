@@ -1,7 +1,7 @@
 import numpy as np
 
 import scipy.cluster.hierarchy as sch
-from . import MatrixReordering
+from .matrix_reordering import MatrixReordering
 from .hcluster import hierarchical_clustering
 
 def order_records(W, *, by='primary', normalize=False, **kwargs):
@@ -16,7 +16,11 @@ def order_records(W, *, by='primary', normalize=False, **kwargs):
     by : str
         Method to use for reordering.
         Can be one of:
-            [TODO]
+            primary - sort by primary component
+            hierarchical - sort by hierarchical clustering
+            ratio - sort by ratio of two components (requires ind1 and ind2 - indices of the components)
+            component - sort by a single component (requires "ind" - index of the component)
+            None - no reordering
 
     Returns
     -------

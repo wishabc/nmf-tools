@@ -3,9 +3,9 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 import scipy.cluster.hierarchy as sch
-
-from . import MatrixReordering
+from .matrix_reordering import MatrixReordering
 from .hcluster import hierarchical_clustering
+
 
 def order_components(W, *, by='primary', normalize=False, **kwargs):
     """
@@ -19,7 +19,11 @@ def order_components(W, *, by='primary', normalize=False, **kwargs):
     by : str
         Method to use for reordering.
         Can be one of:
-            [TODO]
+            primary - sort by primary component
+            template - sort by template matching
+            mean_loading - sort by mean loading
+            cluster - sort by cluster
+            None - no reordering
 
     Returns
     -------
