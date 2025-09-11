@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 from matplotlib import pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -8,10 +7,8 @@ from tqdm import tqdm
 import scipy.cluster.hierarchy as sch
 
 from nmf_tools import in_vierstra_style
-from nmf_tools.matrix_reordering.records_reordering import order_records
-from nmf_tools.matrix_reordering.components_reordering import order_components
+from nmf_tools.matrix_reordering import order_matrix
 from nmf_tools.matrix_reordering.hcluster import hierarchical_clustering
-
 
 
 

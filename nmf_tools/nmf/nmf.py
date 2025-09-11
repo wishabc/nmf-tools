@@ -42,9 +42,7 @@ def get_mock_weights(X: sp.csr_matrix, which='W', dtype=np.float32) -> np.ndarra
     return _normalize_weights(np.ones(shape, dtype=dtype))
 
 
-def read_weights(weights_path: str,
-                 names=None,
-                 dtype=np.float32) -> pd.Series:
+def read_weights(weights_path: str, names=None) -> pd.Series:
     ext = os.path.splitext(weights_path)[-1]
     if ext == '.npy':
         weights = np.load(weights_path)
@@ -58,7 +56,6 @@ def read_weights(weights_path: str,
         weights = weights_df['weight']
 
     return _normalize_weights(weights)
-
 
 
 def validate_input_args(func):

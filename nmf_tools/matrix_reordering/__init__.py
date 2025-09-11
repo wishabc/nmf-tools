@@ -2,6 +2,10 @@ from .components_reordering import order_components
 from .records_reordering import order_records
 from .matrix_reordering import MatrixReordering
 
+
+__all__ = ["MatrixReordering", "order_matrix"]
+
+
 def order_matrix(matrix,
                  order_components_by='primary',
                  order_components_kwargs=None,

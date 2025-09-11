@@ -1,4 +1,3 @@
-import pandas as pd
 import pysam
 import sys
 import numpy as np
