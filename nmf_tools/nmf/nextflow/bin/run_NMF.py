@@ -18,7 +18,7 @@ def main(nmf_input_data: NMFInputData):
             np.sqrt(nmf_input_data.peaks_weights)
         ).T.multiply(
             np.sqrt(nmf_input_data.samples_weights)
-        ).T
+        ).T.tocsr()
 
     if nmf_input_data.samples_mask.sum() < nmf_input_data.samples_mask.shape[0]:
         X = nmf_input_data.matrix[nmf_input_data.samples_mask, :]
