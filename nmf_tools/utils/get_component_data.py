@@ -3,8 +3,8 @@ import pandas as pd
 
 from nmf_tools.matrix_reordering.components_reordering import order_components_by_template
 
-W_old_path_default = '/net/seq/data2/projects/sabramov/SuperIndex/dnase-peak-calls/embeddings/NMF/p_weights.0.1pr_index/output/nmf/dhs_point1pr.28/dhs_point1pr.28.W.npy'
-component_data_old_path_default = '/home/sabramov/temp_component_metadata_dhs_point1pr_28.tsv'
+W_old_path_default = '/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/w_babachi_new.v23/embeddings/NMF/meta_mar5_2025/output/nmf/hotspot3_index.mar5.filled_1pr.ontology_extended_spot_30_weights_norm.30/hotspot3_index.mar5.filled_1pr.ontology_extended_spot_30_weights_norm.30.W.npy'
+component_data_old_path_default = '/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/w_babachi_new.v23/embeddings/NMF/meta_mar5_2025/output/nmf/hotspot3_index.mar5.filled_1pr.ontology_extended_spot_30_weights_norm.30/component_data.tsv'
 
 
 def get_component_data(W, W_old_path=W_old_path_default, component_data_old_path=component_data_old_path_default):

@@ -1,0 +1,25 @@
+name: nmf
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - matplotlib
+  - pandas=2.1.0
+  - nextflow=23.10.1
+  - anndata
+  - dask
+  - zarr
+  - scikit-learn
+  - umap-learn
+  - seaborn
+  - tmux
+  - python=3.9
+  - statsmodels
+  - scipy
+  - tqdm
+  - pip
+  - pip:
+    - git+https://github.com/wishabc/nmf-tools.git
+    - genome_tools>=2.0
+prefix: /home/sabramov/miniconda3/envs/nmf
