@@ -102,7 +102,7 @@ def _parse_from_anndata(cfg) -> NMFInputData:
     else:
         peaks_weights = get_mock_weights(matrix, which='H')
 
-    assert cfg["mode"] in ["weighted", "modified_X"]
+    assert cfg["mode"] in ["weighted", "scaled_X"]
     return NMFInputData(
         matrix=matrix,
         samples_mask=samples_mask,
