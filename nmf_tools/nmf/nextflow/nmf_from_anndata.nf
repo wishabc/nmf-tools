@@ -67,8 +67,9 @@ process add_metadata {
 // nextflow run ~/packages/nmf_tools/nmf/nextflow/nmf_from_anndata.nf -profile Altius -resume
 workflow {
     Channel.fromPath(params.nmf_params)
-        | splitText()
+        | splitCsv(header: false)
         | distinct { it[0] }
+        | map(it -> it[0])
         | fit_nmf
         | visualize_nmf
 
