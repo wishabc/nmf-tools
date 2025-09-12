@@ -30,7 +30,7 @@ process visualize_nmf {
     errorStrategy 'ignore'
 
 	input:
-        val prefix, path(W), path(H), path(non_zero_peaks_mask)
+        tuple val(prefix), path(W), path(H), path(non_zero_peaks_mask)
 
 	output:
         tuple val(prefix), path("*.pdf")
