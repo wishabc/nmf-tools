@@ -16,7 +16,7 @@ process fit_nmf {
 
 	script:
 	"""
-    python3 $moduleDir/bin/nmf/run_NMF.py \
+    python3 $moduleDir/bin/run_NMF.py \
         ${prefix} \
         ${params.nmf_config}
 	"""
@@ -37,7 +37,7 @@ process visualize_nmf {
 
 	script:
 	"""
-    python3 $moduleDir/bin/nmf/visualize_nmf.py \
+    python3 $moduleDir/bin/visualize_nmf.py \
         ${prefix} \
         ${params.nmf_config} \
         ${W} \
