@@ -82,13 +82,13 @@ def _parse_from_anndata(cfg) -> NMFInputData:
     matrix = adata.layers["binary"]  # samples x peaks
 
   
-    if cfg["samples_mask_column"] is not None:
-        samples_mask = mask_from_metadata(adata.obs, cfg["samples_mask_column"])
+    if cfg["sample_mask_eval"] is not None:
+        samples_mask = mask_from_metadata(adata.obs, cfg["sample_mask_eval"])
     else:
         samples_mask = np.ones(adata.n_obs, dtype=bool)
 
-    if cfg["dhs_mask_column"] is not None:
-        peaks_mask = mask_from_metadata(adata.var, cfg["dhs_mask_column"])
+    if cfg["dhs_mask_eval"] is not None:
+        peaks_mask = mask_from_metadata(adata.var, cfg["dhs_mask_eval"])
     else:
         peaks_mask = np.ones(adata.n_vars, dtype=bool)
 

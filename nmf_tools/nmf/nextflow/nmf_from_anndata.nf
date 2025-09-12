@@ -9,24 +9,16 @@ process fit_nmf {
     label "highmem"
 
 	input:
-		tuple val(prefix), val(n_components), path(anndata_path), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights), val(extra_params)
+		val prefix
 
 	output:
-        tuple val(prefix), val(n_components), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
+        tuple val(prefix), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt")
 
 	script:
 	"""
     python3 $moduleDir/bin/nmf/run_NMF.py \
-        ${n_components} \
         ${prefix} \
-        --from_anndata ${params.anndata_path} \
-        --samples_mask_eval 'disease_pathology == "Normal"' \
-        --dhs_mask_eval 'autosomal_dhs' \
-        --project_masked_samples \
-        ${non_required_arg(weights_path, '--samples_weights')} \
-        ${non_required_arg(samples_mask, '--samples_mask')} \
-        ${non_required_arg(peaks_mask, '--peaks_mask')} \
-        ${non_required_arg(extra_params, '--extra_params')}
+        ${params.nmf_config}
 	"""
 }
 
@@ -38,7 +30,7 @@ process visualize_nmf {
     errorStrategy 'ignore'
 
 	input:
-        tuple val(prefix), val(n_components), path(anndata_path), path(W), path(H), path(peaks_mask), path(samples_mask)
+        val prefix, path(W), path(H), path(non_zero_peaks_mask)
 
 	output:
         tuple val(prefix), path("*.pdf")
@@ -46,31 +38,26 @@ process visualize_nmf {
 	script:
 	"""
     python3 $moduleDir/bin/nmf/visualize_nmf.py \
-        ${n_components} \
         ${prefix} \
+        ${params.nmf_config} \
         ${W} \
-        ${H} \
-        --outpath ./ \
-        --from_anndata ${anndata_path} \
-        --peaks_mask ${peaks_mask} \
-        --samples_mask ${samples_mask} \
-        --samples_mask_column reference_sample \
-        --dhs_mask_column autosomal_dhs \
+        ${H}
 	"""
 }
 
 process add_metadata {
     conda params.conda
     publishDir "${params.outdir}"
+    errorStrategy 'ignore'
 
     output:
         path name
 
     script:
-    name = "${file(params.nmf_params).baseName}+matrices.tsv"
+    name = "nmf_meta+matrices.tsv"
     """
     python3 $moduleDir/bin/nmf/add_metadata.py \
-        ${params.nmf_params} \
+        ${params.nmf_config} \
         ${params.outdir}/nmf \
         ${name}
     """
@@ -80,16 +67,7 @@ process add_metadata {
 // nextflow run ~/packages/nmf_tools/nmf/nextflow/nmf_from_anndata.nf -profile Altius -resume
 workflow {
     Channel.fromPath(params.nmf_params)
-        | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(
-            row.prefix,
-            row.n_components,
-            row?.samples_weights,
-            row?.peaks_mask,
-            row?.samples_mask,
-            row?.peaks_weights,
-            row?.extra_params
-            ))
+        | splitText()
         | distinct { it[0] }
         | fit_nmf
         | visualize_nmf
@@ -115,7 +93,6 @@ workflow visualize {
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.W.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.H.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.non_zero_peaks_mask.txt"),
-                file("${params.nmf_results_path}/${it[0]}/${it[0]}.samples_mask.txt"),
             )
         )
         | filter { it[3].exists() }
