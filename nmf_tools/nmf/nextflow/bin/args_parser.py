@@ -42,7 +42,7 @@ DEFAULTS = {
 def setup_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Prepare NMF input from AnnData + YAML config")
     parser.add_argument("prefix", help="Sample prefix defined in config YAML")
-    parser.add_argument("--config", required=True, help="YAML config file")
+    parser.add_argument("config", help="YAML config file")
     return parser
 
 
