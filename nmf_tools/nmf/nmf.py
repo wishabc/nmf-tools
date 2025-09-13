@@ -7,7 +7,7 @@ from nmf_tools.matrix_reordering.components_reordering import order_components_b
 import os
 import pandas as pd
 
-
+import functools
 dtype = np.float64
 
 
@@ -59,6 +59,7 @@ def read_weights(weights_path: str, names=None) -> pd.Series:
 
 
 def validate_input_args(func):
+    @functools.wraps(func)
     def wrapper(self, X, *args, W_weights=None, H_weights=None, **kwargs):
         X = data_to_sparse(X)
         if W_weights is None:
@@ -68,7 +69,7 @@ def validate_input_args(func):
         assert W_weights.shape[0] == X.shape[0]
         assert H_weights.shape[0] == X.shape[1]
         assert W_weights.ndim == 1 and H_weights.ndim == 1, 'Weights are expected to be 1D arrays'
-        return func(self, X=X, *args, W_weights=W_weights, H_weights=H_weights, **kwargs)
+        return func(self, X, *args, W_weights=W_weights, H_weights=H_weights, **kwargs)
 
     return wrapper
     
