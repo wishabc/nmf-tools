@@ -39,7 +39,8 @@ def main(
         component_data,
         order_records_by='primary',
         normalize_for_plotting=True,
-        ax=ax
+        ax=ax,
+        plotting_kwargs=dict(rasterized=True)
     )
     plt.savefig(f'{vis_path}.Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
@@ -51,7 +52,8 @@ def main(
         component_data,
         normalize_for_plotting=False,
         order_records_by='primary',
-        ax=ax
+        ax=ax,
+        plotting_kwargs=dict(rasterized=True)
     )
     plt.savefig(f'{vis_path}.Barplot_all_DHSs.not_norm.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
@@ -65,7 +67,8 @@ def main(
         component_data,
         normalize_for_plotting=True,
         order_records_by='primary',
-        ax=ax
+        ax=ax,
+        plotting_kwargs=dict(rasterized=True)
     )
     plt.savefig(f'{vis_path}.Barplot_DHS_supported_by_4+samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
@@ -220,7 +223,6 @@ if __name__ == '__main__':
 
     W = np.load(args.W).T # NMF components x samples
     H = np.load(args.H).T # NMF components x peaks
-    print(W.shape, H.shape, flush=True)
     outprefix = f"{args.outpath}/{args.prefix}"
     main(nmf_data, W, H, outprefix)
 
