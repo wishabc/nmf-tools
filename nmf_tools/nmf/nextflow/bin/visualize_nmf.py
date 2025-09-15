@@ -210,6 +210,7 @@ if __name__ == '__main__':
 
     W = np.load(args.W).T # NMF components x samples
     H = np.load(args.H).T # NMF components x peaks
+    print(W.shape, H.shape)
     outprefix = f"{args.outpath}/{args.prefix}"
     main(nmf_data, W, H, outprefix)
 
