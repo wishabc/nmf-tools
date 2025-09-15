@@ -33,57 +33,67 @@ def main(
 
     ######## Plot DHSs #########
     print('All DHSs')
+    fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
         H,
         component_data,
         order_records_by='primary',
-        normalize_for_plotting=True
+        normalize_for_plotting=True,
+        ax=ax
     )
     plt.savefig(f'{vis_path}.Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
-    plt.close(ax.get_figure())
+    plt.close(fig)
 
     print('All DHSs not normalized')
+    fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
         H,
         component_data,
         normalize_for_plotting=False,
         order_records_by='primary',
+        ax=ax
     )
     plt.savefig(f'{vis_path}.Barplot_all_DHSs.not_norm.pdf', transparent=True, bbox_inches='tight')
-    plt.close(ax.get_figure())
+    plt.close(fig)
 
     #Only reproduced DHSs
     print('>=4 peaks supporting a DHS')
     reproduced_peaks = binary_matrix.sum(axis=0) >= 4
+    fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
         H[:, reproduced_peaks],
         component_data,
         normalize_for_plotting=True,
         order_records_by='primary',
+        ax=ax
     )
     plt.savefig(f'{vis_path}.Barplot_DHS_supported_by_4+samples.pdf', transparent=True, bbox_inches='tight')
-    plt.close(ax.get_figure())
+    plt.close(fig)
 
 
     ######### Plot samples #########
-    if project_masked_samples:
-        print('Reference samples set')
-        ax, _, _ = component_barplot(
-            W[:, samples_mask],
-            component_data,
-            order_records_by='primary'
-        )
-        plt.savefig(f'{vis_path}.Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
-        plt.close(ax.get_figure())
-    
     print('All samples')
+    fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
         W,
         component_data,
-        order_records_by='primary'
+        order_records_by='primary',
+        ax=ax
     )
     plt.savefig(f'{vis_path}.Barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
-    plt.close(ax.get_figure())
+    plt.close(fig)
+    if project_masked_samples:
+        print('Reference samples set')
+        fig, ax = plt.subplots(figsize=(20, 2))
+        ax, _, _ = component_barplot(
+            W[:, samples_mask],
+            component_data,
+            order_records_by='primary',
+            ax=ax
+        )
+        plt.savefig(f'{vis_path}.Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
+        plt.close(fig)
+    
 
     annotations = metadata["sample_label"].values
     print('Detailed barplot all samples')
@@ -210,7 +220,7 @@ if __name__ == '__main__':
 
     W = np.load(args.W).T # NMF components x samples
     H = np.load(args.H).T # NMF components x peaks
-    print(W.shape, H.shape)
+    print(W.shape, H.shape, flush=True)
     outprefix = f"{args.outpath}/{args.prefix}"
     main(nmf_data, W, H, outprefix)
 
