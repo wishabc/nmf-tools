@@ -24,7 +24,7 @@ def main(
     samples_mask = nmf_data.samples_mask
     peaks_mask = nmf_data.peaks_mask
 
-    binary_matrix = nmf_data.matrix[peaks_mask, :]
+    binary_matrix = nmf_data.matrix[:, peaks_mask] # samples x DHSs
     dhs_meta = nmf_data.dhs_metadata[peaks_mask]
 
     if not project_masked_samples:
@@ -54,7 +54,7 @@ def main(
 
     #Only reproduced DHSs
     print('>=4 peaks supporting a DHS')
-    reproduced_peaks = binary_matrix.sum(axis=1) >= 4
+    reproduced_peaks = binary_matrix.sum(axis=0) >= 4
     ax, _, _ = component_barplot(
         H[:, reproduced_peaks],
         component_data,
