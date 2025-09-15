@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from args_parser import NMFInputData, setup_parser, parse_nmf_args
 
-from nmf_tools.utils import get_component_data
+from nmf_tools.utils.component_data import get_component_data
 from nmf_tools.plotting.matrices_barplots import component_barplot, component_barplot_at_scale, plot_top_contributing_samples 
 
 
