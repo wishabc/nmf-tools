@@ -66,7 +66,7 @@ def component_barplot(matrix, component_data, box_lw=0.15, ax=None, plotting_kwa
 @in_vierstra_style
 def component_barplot_at_scale(
     matrix, component_data, records_labels,
-    label_colors=None, **kwargs
+    label_colors=None, figsize=None, bars_per_panel=100, **kwargs
 ):
     assert len(records_labels) == matrix.shape[1]
     
@@ -75,19 +75,20 @@ def component_barplot_at_scale(
 
     colors = component_data.sort_values('index')['color']
     
-    bars_per_panel = 100
     n_chunks = np.ceil(matrix.shape[1] / bars_per_panel).astype(int)
     
-    fig, axes = plt.subplots(n_chunks, 1, figsize=(20, 4*n_chunks))
+        
+    if figsize is None:
+        figsize = (20, 4 * n_chunks)
+    fig, axes = plt.subplots(n_chunks, 1, figsize=figsize)
     if n_chunks == 1:
         axes = [axes]
     fig.subplots_adjust(hspace=1.5)
-
     
     maxv = np.max(tops)
     for k in tqdm(np.arange(n_chunks)):
         ax = axes[k]
-        sl = slice(bars_per_panel*k, bars_per_panel*(k+1), 1)
+        sl = slice(bars_per_panel * k, bars_per_panel * (k + 1), 1)
         num_elements = order[sl].shape[0]
 
         plot_stacked_barplot(
@@ -211,15 +212,16 @@ def plot_component_top_barplot(data, labels, color, ax=None, top_count=15):
     return ax
 
 
-def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_count=10, common_scale=False, fig=None, wspace=1, hspace=0.3, component_is_major=False):
+def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_count=10, common_scale=False, figsize=None, wspace=1, hspace=0.3, component_is_major=False):
     n_components = W.shape[0]
 
     ncols = int(np.ceil(ncols))
     nrows = int(np.ceil(n_components / ncols))
     
-    if fig is None:
-        fig = plt.gcf()
+    if figsize is None:
+        figsize = ncols * 3.2, nrows * 2.7
 
+    fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(nrows, ncols, wspace=wspace, hspace=hspace)
 
     axes = []
@@ -233,16 +235,17 @@ def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_c
             annots = annotations[major_comp_mask]
         else:
             annots = annotations
-        tc = min(top_count, W_slice.shape[0])
+
         ax = plot_component_top_barplot(
             W_slice,
             annots,
             color=row['color'],
             ax=ax,
-            top_count=tc
+            top_count=top_count
         )
         ax.set_title(f'{row["name"]}', fontsize=4, pad=2)
         xlims.append(ax.get_xlim())
+        ax.set_ylim(0,)
         axes.append(ax)
     if common_scale:
         for ax in axes:

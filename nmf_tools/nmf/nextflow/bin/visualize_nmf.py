@@ -1,8 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-
-import scipy.cluster.hierarchy as sch
 
 from args_parser import NMFInputData, setup_parser, parse_nmf_args
 
@@ -30,136 +27,150 @@ def main(
     binary_matrix = nmf_data.matrix[peaks_mask, :]
     dhs_meta = nmf_data.dhs_metadata[peaks_mask]
 
-    for i, row in component_data.iterrows():
-        weights = np.ones(W.shape[0])
-        weights[i] = W.shape[0]
-
-        fig, _ = component_barplot_at_scale(
-            W,
-            component_data=component_data,
-            records_labels=metadata['sample_label'].values,
-            order_components_by='mean_loading',
-            order_records_by='component',
-            order_records_kwargs=dict(ind=i)
-        )
-        comp_name = row["name"].replace("/", ".").replace(' ', '.')
-        plt.savefig(f'{vis_path}/Detailed_barplot.{comp_name}.pdf', transparent=True, bbox_inches='tight')
-        plt.close(fig)
-
-
-
     if not project_masked_samples:
         metadata = metadata[samples_mask]
 
-    ######### Plot samples #########
-    if project_masked_samples:
-        print('Reference samples set')
-        ax, _, _ = component_barplot(W[:, samples_mask], component_data)
-        plt.savefig(f'{vis_path}.Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
-        plt.close(ax.get_figure())
-    
 
-    print('All samples')
-    ax, _, _ = component_barplot(W, component_data, order_records_by='primary')
-    plt.savefig(f'{vis_path}.Barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
-    plt.close(ax.get_figure())
-
-
-    ######## Plot peaks #########
-    print('All peaks')
-    ax, _, _ = component_barplot(H, component_data)
+    ######## Plot DHSs #########
+    print('All DHSs')
+    ax, _, _ = component_barplot(
+        H,
+        component_data,
+        order_records_by='primary',
+        normalize_for_plotting=True
+    )
     plt.savefig(f'{vis_path}.Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
-    print('All peaks not normalized')
-    ax, _, _ = component_barplot(H, component_data, normalize=False)
+    print('All DHSs not normalized')
+    ax, _, _ = component_barplot(
+        H,
+        component_data,
+        normalize_for_plotting=False,
+        order_records_by='primary',
+    )
     plt.savefig(f'{vis_path}.Barplot_all_DHSs.not_norm.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
     #Only reproduced DHSs
-    print('>3 peaks supproting a DHS')
-    reproduced_peaks = binary_matrix.sum(axis=1) > 3
-    ax, _, _ = component_barplot(H[:, reproduced_peaks], component_data, normalize=True)
+    print('>=4 peaks supporting a DHS')
+    reproduced_peaks = binary_matrix.sum(axis=1) >= 4
+    ax, _, _ = component_barplot(
+        H[:, reproduced_peaks],
+        component_data,
+        normalize_for_plotting=True,
+        order_records_by='primary',
+    )
     plt.savefig(f'{vis_path}.Barplot_DHS_supported_by_4+samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
-    print('Detailed barplot all samples')
-    s_order, fig = component_barplot_at_scale(W, metadata, colors=component_data['color'])
+
+    ######### Plot samples #########
     if project_masked_samples:
-        plt.close(fig)
-        s_mask = samples_mask[s_order]
-        component_barplot_at_scale(
-            W,
-            metadata,
-            colors=component_data['color'],
-            order=s_order,
-            label_colors=[
-                'r' if s else 'k' for s in s_mask
-            ]
+        print('Reference samples set')
+        ax, _, _ = component_barplot(
+            W[:, samples_mask],
+            component_data,
+            order_records_by='primary'
         )
+        plt.savefig(f'{vis_path}.Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
+        plt.close(ax.get_figure())
+    
+    print('All samples')
+    ax, _, _ = component_barplot(
+        W,
+        component_data,
+        order_records_by='primary'
+    )
+    plt.savefig(f'{vis_path}.Barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.close(ax.get_figure())
+
+    annotations = metadata["sample_label"].values
+    print('Detailed barplot all samples')
+    if project_masked_samples:
+        label_colors = np.where(samples_mask, 'k', 'r')
+    else:
+        label_colors = None
+    fig, _, _ = component_barplot_at_scale(
+        W,
+        component_data,
+        records_labels=annotations,
+        label_colors=label_colors
+    )
+
     plt.savefig(f'{vis_path}.Detailed_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
 
     print('Hierarchical barplot all samples')
-    _, fig = component_barplot_at_scale(
+    fig, _, _ = component_barplot_at_scale(
         W,
-        metadata,
-        colors=component_data['color'],
-        order=s_order
+        component_data,
+        records_labels=annotations,
+        label_colors=label_colors,
+        order_records_by='hierarchical',
+        order_components_by='cluster'
     )
-    if project_masked_samples:
-        plt.close(fig)
-        s_mask = samples_mask[s_order]
-        component_barplot_at_scale(
-            W,
-            component_data,
-            order_records_by='hierarchical',
-            order_records_kwargs=dict(optimal_ordering=False),
-            normalize_for_plotting=False,
-            colors=component_data['color'],
-            order=s_order,
-            label_colors=[
-                'r' if s else 'k' for s in s_mask
-            ]
-        )
     plt.savefig(f'{vis_path}.Hierarchical_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
 
     print('Hierarchical barplot reference samples')
-    if samples_mask.sum() < samples_mask.shape[0] and project_masked_samples:
+    if project_masked_samples:
         _, fig = component_barplot_at_scale(
             W[:, samples_mask],
-            metadata.loc[samples_mask, :],
-            colors=component_data['color'],
-            order=s_order
+            component_data,
+            records_labels=annotations[:, samples_mask],
+            order_records_by='hierarchical',
+            order_components_by='cluster'
         )
         plt.savefig(f'{vis_path}.Hierarchical_barplot_reference_samples.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
 
     print('Top 20 samples per component')
-    annotations = metadata["sample_label"].values
-    fig, axes = plot_top_contributing_samples(W, annotations, top_count=20, component_data=component_data)
+  
+    axes = plot_top_contributing_samples(
+        W,
+        annotations,
+        component_data=component_data,
+        top_count=20,
+    )
     plt.savefig(f'{vis_path}.Top20_all_samples_barplot.pdf', bbox_inches='tight', transparent=True)
-    plt.close(fig)
+    plt.close(plt.gcf())
 
-    fig, axes = plot_top_contributing_samples(W, annotations, top_count=20, component_data=component_data, common_scale=True)
+    axes = plot_top_contributing_samples(
+        W,
+        annotations,
+        component_data=component_data,
+        top_count=20,
+        common_scale=True
+    )
     plt.savefig(f'{vis_path}.Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
-    plt.close(fig)
+    plt.close(plt.gcf())
 
     if project_masked_samples:
-        fig, axes = plot_top_contributing_samples(W[:, samples_mask], annotations[samples_mask], top_count=20, component_data=component_data)
+        axes = plot_top_contributing_samples(
+            W[:, samples_mask],
+            annotations[samples_mask],
+            component_data=component_data,
+            top_count=20,
+        )
         plt.savefig(f'{vis_path}.Top20_reference_samples_barplot.pdf', bbox_inches='tight', transparent=True)
-        plt.close(fig)
+        plt.close(plt.gcf())
 
-        fig, axes = plot_top_contributing_samples(W[:, samples_mask], annotations[samples_mask], top_count=20, component_data=component_data, common_scale=True)
+        axes = plot_top_contributing_samples(
+            W[:, samples_mask],
+            annotations[samples_mask],
+            component_data=component_data,
+            top_count=20,
+            common_scale=True
+        )
         plt.savefig(f'{vis_path}.Top20_reference_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
-        plt.close(fig)
+        plt.close(plt.gcf())
 
 
     if 'dist_tss' in dhs_meta.columns:
         ax = plot_dist_tss(H, dhs_meta['dist_tss'], component_data)
         plt.savefig(f'{vis_path}.Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
-        plt.close(fig)
+        plt.close(plt.gcf())
 
 
 
