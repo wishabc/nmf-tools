@@ -33,9 +33,10 @@ def main(
 
     ######## Plot DHSs #########
     print('All DHSs')
+    downsampled_indices = np.random.choice(H.shape[1], size=10_000, replace=False)
     fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
-        H,
+        H[:, downsampled_indices],
         component_data,
         order_records_by='primary',
         normalize_for_plotting=True,
@@ -48,7 +49,7 @@ def main(
     print('All DHSs not normalized')
     fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
-        H,
+        H[:, downsampled_indices],
         component_data,
         normalize_for_plotting=False,
         order_records_by='primary',
@@ -63,7 +64,7 @@ def main(
     reproduced_peaks = binary_matrix.sum(axis=0) >= 4
     fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
-        H[:, reproduced_peaks],
+        H[:, downsampled_indices][:, reproduced_peaks[downsampled_indices]],
         component_data,
         normalize_for_plotting=True,
         order_records_by='primary',
