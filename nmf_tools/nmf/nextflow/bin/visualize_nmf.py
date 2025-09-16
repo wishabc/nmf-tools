@@ -134,7 +134,7 @@ def main(
         _, fig = component_barplot_at_scale(
             W[:, samples_mask],
             component_data,
-            records_labels=annotations[:, samples_mask],
+            records_labels=annotations[samples_mask],
             order_records_by='hierarchical',
             order_components_by='cluster'
         )
