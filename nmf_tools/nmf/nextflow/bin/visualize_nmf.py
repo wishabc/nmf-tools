@@ -144,7 +144,8 @@ def main(
         records_labels=annotations,
         label_colors=label_colors,
         order_records_by='hierarchical',
-        order_components_by='cluster'
+        order_components_by='cluster',
+        normalize_for_plotting=False
     )
     plt.savefig(f'{vis_path}.Hierarchical_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
@@ -156,7 +157,8 @@ def main(
             component_data,
             records_labels=annotations[samples_mask],
             order_records_by='hierarchical',
-            order_components_by='cluster'
+            order_components_by='cluster',
+            normalize_for_plotting=False
         )
         plt.savefig(f'{vis_path}.Hierarchical_barplot_reference_samples.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
