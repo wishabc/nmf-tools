@@ -7,6 +7,20 @@ from nmf_tools.utils.component_data import get_component_data
 from nmf_tools.plotting.matrices_barplots import component_barplot, component_barplot_at_scale, plot_top_contributing_samples 
 
 
+def plot_dist_tss(H, dist_tss, component_data, ax=None):
+    assert H.shape[1] == len(dist_tss)
+    max_component = np.argmax(H, axis=0)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(2, 2))
+    for i, row in component_data.iterrows():
+        data = np.abs(dist_tss[max_component == row['index']])
+        ax.plot(np.sort(data), np.linspace(0, 1, len(data)), color=row['color'])
+    ax.set_xlim(-50, 5000)
+    ax.set_xlabel('Distance to TSS')
+    ax.set_ylabel('Cumulative proportion of DHSs')
+    return ax
+
+
 def main(
         nmf_data: NMFInputData,
         W: np.ndarray,
@@ -32,6 +46,11 @@ def main(
 
 
     ######## Plot DHSs #########
+    if 'dist_tss' in dhs_meta.columns:
+        ax = plot_dist_tss(H, dhs_meta['dist_tss'].values, component_data)
+        plt.savefig(f'{vis_path}.Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
+        plt.close(plt.gcf())
+
     print('All DHSs')
     downsampled_indices = np.random.choice(H.shape[1], size=10_000, replace=False)
     fig, ax = plt.subplots(figsize=(20, 2))
@@ -181,26 +200,6 @@ def main(
         )
         plt.savefig(f'{vis_path}.Top20_reference_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
         plt.close(plt.gcf())
-
-
-    if 'dist_tss' in dhs_meta.columns:
-        ax = plot_dist_tss(H, dhs_meta['dist_tss'], component_data)
-        plt.savefig(f'{vis_path}.Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
-        plt.close(plt.gcf())
-
-
-
-def plot_dist_tss(H, dist_tss, component_data, ax=None):
-    max_component = np.argmax(H, axis=0)
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(2, 2))
-    for i, row in component_data.iterrows():
-        data = np.abs(dist_tss[max_component == row['index']])
-        ax.plot(np.sort(data), np.linspace(0, 1, len(data)), color=row['color'])
-    ax.set_xlim(-50, 5000)
-    ax.set_xlabel('Distance to TSS')
-    ax.set_ylabel('Cumulative proportion of DHSs')
-    return ax
 
 
 if __name__ == '__main__':
