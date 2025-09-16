@@ -131,7 +131,7 @@ def main(
 
     print('Hierarchical barplot reference samples')
     if project_masked_samples:
-        _, fig = component_barplot_at_scale(
+        fig, _, _ = component_barplot_at_scale(
             W[:, samples_mask],
             component_data,
             records_labels=annotations[samples_mask],
