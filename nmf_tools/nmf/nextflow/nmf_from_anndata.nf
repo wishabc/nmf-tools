@@ -41,7 +41,8 @@ process visualize_nmf {
         ${prefix} \
         ${params.nmf_config} \
         ${W} \
-        ${H}
+        ${H} \
+        ${non_zero_peaks_mask}
 	"""
 }
 

@@ -26,7 +26,8 @@ def main(
         W: np.ndarray,
         H: np.ndarray,
         vis_path,
-        component_data=None
+        component_data=None,
+        non_zero_peaks_mask=None
     ):
     if component_data is None:
         component_data = get_component_data(W)
@@ -36,10 +37,9 @@ def main(
 
     metadata = nmf_data.samples_metadata
     samples_mask = nmf_data.samples_mask
-    peaks_mask = nmf_data.peaks_mask
 
-    binary_matrix = nmf_data.matrix[:, peaks_mask] # samples x DHSs
-    dhs_meta = nmf_data.dhs_metadata[peaks_mask]
+    binary_matrix = nmf_data.matrix[:, non_zero_peaks_mask] # samples x DHSs
+    dhs_meta = nmf_data.dhs_metadata[non_zero_peaks_mask]
 
     if not project_masked_samples:
         metadata = metadata[samples_mask]
@@ -209,6 +209,7 @@ if __name__ == '__main__':
     print('Adding options to parser')
     parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('H', help='H matrix of perform NMF decomposition')
+    parser.add_argument('non_zero_peaks_mask', help='Non-zero peaks mask')
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
     args = parser.parse_args()
 
@@ -225,6 +226,7 @@ if __name__ == '__main__':
 
     W = np.load(args.W).T # NMF components x samples
     H = np.load(args.H).T # NMF components x peaks
+    non_zero_peaks_mask = np.loadtxt(args.non_zero_peaks_mask, dtype=bool)
     outprefix = f"{args.outpath}/{args.prefix}"
-    main(nmf_data, W, H, outprefix)
+    main(nmf_data, W, H, outprefix, non_zero_peaks_mask)
 
