@@ -25,9 +25,9 @@ def main(
         nmf_data: NMFInputData,
         W: np.ndarray,
         H: np.ndarray,
-        vis_path,
-        component_data=None,
-        non_zero_peaks_mask=None
+        non_zero_peaks_mask: np.ndarray,
+        vis_path: str,
+        component_data=None
     ):
     if component_data is None:
         component_data = get_component_data(W)
@@ -229,5 +229,5 @@ if __name__ == '__main__':
     H = np.load(args.H).T # NMF components x peaks
     non_zero_peaks_mask = np.loadtxt(args.non_zero_peaks_mask, dtype=bool)
     outprefix = f"{args.outpath}/{args.prefix}"
-    main(nmf_data, W, H, outprefix, non_zero_peaks_mask)
+    main(nmf_data, W, H, non_zero_peaks_mask, outprefix)
 
