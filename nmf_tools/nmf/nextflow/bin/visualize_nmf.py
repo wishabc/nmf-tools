@@ -82,7 +82,8 @@ def main(
         W,
         component_data,
         order_records_by='primary',
-        ax=ax
+        ax=ax,
+        plotting_kwargs=dict(rasterized=True)
     )
     plt.savefig(f'{vis_path}.Barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
@@ -93,7 +94,8 @@ def main(
             W[:, samples_mask],
             component_data,
             order_records_by='primary',
-            ax=ax
+            ax=ax,
+            plotting_kwargs=dict(rasterized=True)
         )
         plt.savefig(f'{vis_path}.Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
