@@ -130,6 +130,7 @@ def main(
     fig, _, _ = component_barplot_at_scale(
         W,
         component_data,
+        order_records_by='primary',
         records_labels=annotations,
         label_colors=label_colors
     )
