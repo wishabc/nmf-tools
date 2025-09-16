@@ -61,7 +61,7 @@ def main(
 
     #Only reproduced DHSs
     print('>=4 peaks supporting a DHS')
-    reproduced_peaks = binary_matrix[:, downsampled_indices].sum(axis=0) >= 4
+    reproduced_peaks = binary_matrix[:, downsampled_indices].sum(axis=0).A1 >= 4
     fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
         H[:, downsampled_indices][:, reproduced_peaks],
