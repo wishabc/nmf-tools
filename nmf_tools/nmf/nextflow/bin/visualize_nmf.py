@@ -52,7 +52,8 @@ def main(
         plt.close(plt.gcf())
 
     print('All DHSs')
-    downsampled_indices = np.random.choice(H.shape[1], size=10_000, replace=False)
+    rng = np.random.default_rng(42)
+    downsampled_indices = rng.choice(H.shape[1], size=10_000, replace=False)
     fig, ax = plt.subplots(figsize=(20, 2))
     ax, _, _ = component_barplot(
         H[:, downsampled_indices],
