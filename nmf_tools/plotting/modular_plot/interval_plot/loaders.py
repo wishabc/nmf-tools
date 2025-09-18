@@ -6,8 +6,11 @@ from genome_tools.genomic_interval import df_to_genomic_intervals, filter_df_to_
 from genome_tools.data.extractors import TabixExtractor
 from genome_tools.utils.signal import smooth_and_aggregate_per_nucleotide_signal
 
-from footprint_tools.cli.post import posterior_stats as PosteriorStats
-from footprint_tools.stats import posterior
+try:
+    from footprint_tools.cli.post import posterior_stats as PosteriorStats
+    from footprint_tools.stats import posterior
+except ImportError:
+    print("footprint_tools not installed, FootprintDatasetLoader will not work")
 
 from nmf_tools.plotting.extract_reads import extract_allelic_reads
 
