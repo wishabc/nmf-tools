@@ -11,7 +11,6 @@ from nmf_tools.matrix_reordering import order_matrix
 from nmf_tools.matrix_reordering.hcluster import hierarchical_clustering
 
 
-
 @in_vierstra_style
 def plot_stacked_barplot(bottoms, tops, colors, xvals=None, ax=None, orient='horizontal', **kwargs):
     assert bottoms.shape == tops.shape
@@ -193,6 +192,7 @@ def component_barplot_with_dendrogram(
     return ax1, ax2, components_order, records_order
 
 
+@in_vierstra_style
 def plot_component_top_barplot(data, labels, color, ax=None, top_count=15):
     n_samples = data.shape[0]
     top_count_actual = min(top_count, n_samples)

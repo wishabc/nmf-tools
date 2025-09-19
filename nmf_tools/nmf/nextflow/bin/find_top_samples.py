@@ -1,0 +1,61 @@
+import pandas as pd
+import numpy as np
+import os
+
+from args_parser import setup_parser, parse_nmf_args
+
+
+from genome_tools.data.anndata import read_zarr_backed
+
+
+def main(W: np.ndarray, densitity_files: pd.Series, topX: int, suffix: str):
+    assert W.shape[1] == densitity_files.shape[0]
+    top_samples = []
+    major_component = np.argmax(W, axis=0)
+    for component in range(W.shape[0]):
+        component_is_major_indices = np.where(major_component == component)[0]
+        sorted_indices = component_is_major_indices[
+            np.argsort(W[component, component_is_major_indices])[::-1]
+        ][:topX]
+        for sample in sorted_indices[:topX]:
+            path = densitity_files.iloc[sample]
+            ag_id = densitity_files.index[sample]
+            os.symlink(
+                path,
+                f'{component}.{ag_id}.component_{suffix}.bw'
+            )
+            top_samples.append([ag_id, component])
+    return pd.DataFrame.from_records(top_samples, columns=['ag_id', 'component'])
+
+
+if __name__ == "__main__":
+    parser = setup_parser()
+
+    print('Adding options to parser')
+    parser.add_argument('W', help='W matrix of perform NMF decomposition')
+    parser.add_argument('non_zero_peaks_mask', help='Non-zero peaks mask')
+    parser.add_argument('--outpath', help='Path to save visualizations', default='./')
+    args = parser.parse_args()
+
+    args = parser.parse_args()
+    nmf_data = parse_nmf_args(args.prefix, args.config)
+    W = np.load(args.W).T
+
+    density_tracks = read_zarr_backed(
+        sys.argv[2]
+    ).obs['normalized_density_bw']
+
+    unique_suffix = sys.argv[3] 
+    top = int(sys.argv[4])
+    top_samples = main(W, density_tracks, topX=top, suffix=unique_suffix)
+    top_samples.to_csv(f"{unique_suffix}.top_samples.tsv", index=False, sep="\t")
+    
+    basepath = f"{sys.argv[5]}/{unique_suffix}"
+    tracks_paths = pd.DataFrame({
+        'component': np.arange(W.shape[0]),
+        'aggregated_bw': [f'{basepath}.{i}.top_samples.bw' for i in range(W.shape[0])],
+        'aggregated_bg': [f'{basepath}.{i}.top_samples.bg' for i in range(W.shape[0])],
+    })
+    tracks_paths['n_samples'] = top_samples['component'].value_counts()
+    
+    tracks_paths.to_csv(f'{unique_suffix}.density_tracks_meta.tsv', sep='\t', index=False)

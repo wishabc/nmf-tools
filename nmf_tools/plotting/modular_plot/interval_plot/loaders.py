@@ -10,7 +10,7 @@ try:
     from footprint_tools.cli.post import posterior_stats as PosteriorStats
     from footprint_tools.stats import posterior
 except ImportError:
-    print("footprint_tools not installed, FootprintDatasetLoader will not work")
+    print("Install footprint_tools to use FootprintDatasetLoader and FootprintsLoader")
 
 from nmf_tools.plotting.extract_reads import extract_allelic_reads
 

@@ -207,6 +207,9 @@ class DataLoader(LoggerMixin):
             raise ValueError(f"Loader {self.__class__.__name__} is missing required argument(s): {', '.join(missing_args)}")
 
 
+PlotDataLoader = DataLoader
+
+
 class RequiredArgument:
     def __repr__(self):
         return 'Required loader arg'
