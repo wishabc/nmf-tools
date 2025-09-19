@@ -47,13 +47,3 @@ if __name__ == "__main__":
     density_tracks = nmf_data.samples_metadata['normalize_density']
     top_samples = main(W, density_tracks, topX=args.top, suffix=args.prefix)
     top_samples.to_csv(f"{args.prefix}.top_samples.tsv", index=False, sep="\t")
-    
-    basepath = f"{sys.argv[5]}/{unique_suffix}"
-    tracks_paths = pd.DataFrame({
-        'component': np.arange(W.shape[0]),
-        'aggregated_bw': [f'{basepath}.{i}.top_samples.bw' for i in range(W.shape[0])],
-        'aggregated_bg': [f'{basepath}.{i}.top_samples.bg' for i in range(W.shape[0])],
-    })
-    tracks_paths['n_samples'] = top_samples['component'].value_counts()
-    
-    tracks_paths.to_csv(f'{unique_suffix}.density_tracks_meta.tsv', sep='\t', index=False)

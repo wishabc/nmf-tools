@@ -13,7 +13,7 @@ process find_top_samples {
         tuple val(prefix), path(W), path(H), path(non_zero_peaks_mask)
 
     output:
-        tuple path("*.*.component_${prefix}.bw"), path(name), path(res)
+        tuple val(prefix), path("*.*.component_${prefix}.bw"), path(name), path(res)
 
     script:
     name = "${prefix}.top_samples.tsv"
@@ -22,10 +22,10 @@ process find_top_samples {
     python3 $moduleDir/bin/find_top_samples.py \
         ${prefix} \
         ${params.nmf_config} \
-        ${W_matrix} \
+        ${W} \
+        ${H} \
         ${non_zero_peaks_mask} \
-        ${params.top_count} \
-        ${params.outdir}/top_samples/${prefix} \
+        ${params.top_count}
     """
 }
 
@@ -38,7 +38,7 @@ process top_samples_track {
     publishDir "${params.outdir}/top_samples/${prefix}"
 
     input:
-        tuple val(component), val(prefix), path(density_bw, stageAs: "?/*")
+        tuple val(prefix), val(component), path(density_bw, stageAs: "?/*")
     
     output:
         tuple val(prefix), val(component), path(name)
@@ -58,13 +58,12 @@ workflow findTop {
     main:
         top_samples = data
             | find_top_samples
-            | map(it -> it[0])
-            | flatten()
-            | combine(nmf_data.map(it -> it[0]))
-            | map(it -> tuple(it[0].simpleName, it[1], it[0]))
-            | groupTuple(by: [0, 1])
-            | top_samples_track
-            // | map(it -> "${params.outdir}/top_samples/${it[0]}/${it[2].name}")
+            | map(it -> tuple(it[0], it[1]))
+            | transpose() // prefix, bw_file
+
+            | map(it -> tuple(it[0], it[1].simpleName, it[1]))
+            | groupTuple(by: [0, 1]) // component, prefix, bw_files
+            | top_samples_track // 
             | collectFile(
                 storeDir: "${params.outdir}/top_samples",
                 skip: 1,
