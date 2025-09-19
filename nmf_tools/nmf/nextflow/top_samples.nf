@@ -56,6 +56,8 @@ workflow findTop {
     main:
         top_samples = data
             | find_top_samples
+            | take(2)
+            | view()
             | map(it -> tuple(it[0], it[1]))
             | take(2)
             | view()
