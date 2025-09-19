@@ -34,21 +34,19 @@ if __name__ == "__main__":
     print('Adding options to parser')
     parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('non_zero_peaks_mask', help='Non-zero peaks mask')
+    parser.add_argument('path_to_bw', help='Path to aggregated bw output files (will be created on the next pipeline step)')
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
+    parser.add_argument('--top', type=int, default=10, help='Number of top samples to select')
+
     args = parser.parse_args()
 
     args = parser.parse_args()
     nmf_data = parse_nmf_args(args.prefix, args.config)
     W = np.load(args.W).T
 
-    density_tracks = read_zarr_backed(
-        sys.argv[2]
-    ).obs['normalized_density_bw']
-
-    unique_suffix = sys.argv[3] 
-    top = int(sys.argv[4])
-    top_samples = main(W, density_tracks, topX=top, suffix=unique_suffix)
-    top_samples.to_csv(f"{unique_suffix}.top_samples.tsv", index=False, sep="\t")
+    density_tracks = nmf_data.samples_metadata['normalize_density']
+    top_samples = main(W, density_tracks, topX=args.top, suffix=args.prefix)
+    top_samples.to_csv(f"{args.prefix}.top_samples.tsv", index=False, sep="\t")
     
     basepath = f"{sys.argv[5]}/{unique_suffix}"
     tracks_paths = pd.DataFrame({

@@ -41,7 +41,7 @@ process top_samples_track {
         tuple val(component), val(prefix), path(density_bw, stageAs: "?/*")
     
     output:
-        tuple val(prefix), path(name), path(bg)
+        tuple val(prefix), val(component), path(name)
     
     script:
     name = "${prefix}.${component}.top_samples.bw"
@@ -56,7 +56,7 @@ workflow findTop {
     take:
         data // 
     main:
-        data
+        top_samples = data
             | find_top_samples
             | map(it -> it[0])
             | flatten()
@@ -64,7 +64,18 @@ workflow findTop {
             | map(it -> tuple(it[0].simpleName, it[1], it[0]))
             | groupTuple(by: [0, 1])
             | top_samples_track
+            // | map(it -> "${params.outdir}/top_samples/${it[0]}/${it[2].name}")
+            | collectFile(
+                storeDir: "${params.outdir}/top_samples",
+                skip: 1,
+                keepHeader: true
+            ) {
+                [
+                    "${it[0]}.components_meta.tsv", //name
+                    "component\tbw\n${it[1]}\t${params.outdir}/top_samples/${it[0]}/${it[2].name}" // content
+                ]
+            }
 
     emit:
-
+        top_samples
 }
