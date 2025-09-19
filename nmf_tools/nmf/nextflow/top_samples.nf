@@ -56,25 +56,21 @@ workflow findTop {
     main:
         top_samples = data
             | find_top_samples
-            | take(2)
-            | view
-            // | map(it -> tuple(it[0], it[1]))
-            // | take(2)
-            // | view()
-            // | transpose() // prefix, bw_file
-            // | map(it -> tuple(it[0], it[1].simpleName, it[1]))
-            // | groupTuple(by: [0, 1]) // component, prefix, bw_files
-            // | top_samples_track // 
-            // | collectFile(
-            //     storeDir: "${params.outdir}/top_samples",
-            //     skip: 1,
-            //     keepHeader: true
-            // ) {
-            //     [
-            //         "${it[0]}.components_meta.tsv", //name
-            //         "component\tbw\n${it[1]}\t${params.outdir}/top_samples/${it[0]}/${it[2].name}" // content
-            //     ]
-            // }
+            | map(it -> tuple(it[0], it[1]))
+            | transpose() // prefix, bw_file
+            | map(it -> tuple(it[0], it[1].simpleName, it[1]))
+            | groupTuple(by: [0, 1]) // component, prefix, bw_files
+            | top_samples_track
+            | collectFile(
+                storeDir: "${params.outdir}/top_samples",
+                skip: 1,
+                keepHeader: true
+            ) {
+                [
+                    "${it[0]}.components_meta.tsv", //name
+                    "component\tbw\n${it[1]}\t${params.outdir}/top_samples/${it[0]}/${it[2].name}" // content
+                ]
+            }
 
     emit:
         top_samples

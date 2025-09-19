@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { find_top_samples } from "./top_samples"
+include { findTop } from "./top_samples"
 
 process fit_nmf {
 	tag "${prefix}"
