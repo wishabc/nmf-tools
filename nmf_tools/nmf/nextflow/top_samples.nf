@@ -25,7 +25,7 @@ process find_top_samples {
         ${W} \
         ${H} \
         ${non_zero_peaks_mask} \
-        --top_count ${params.top_count}
+        --top ${params.top_count}
     """
 }
 
