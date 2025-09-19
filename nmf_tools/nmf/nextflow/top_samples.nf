@@ -7,7 +7,6 @@ process find_top_samples {
     conda params.conda
     tag "${prefix}"
     publishDir "${params.outdir}/top_samples", pattern: "${name}"
-    publishDir "${params.outdir}/top_samples", pattern: "${res}"
     label "highmem"
 
     input:
@@ -59,7 +58,6 @@ workflow findTop {
             | find_top_samples
             | map(it -> tuple(it[0], it[1]))
             | transpose() // prefix, bw_file
-
             | map(it -> tuple(it[0], it[1].simpleName, it[1]))
             | groupTuple(by: [0, 1]) // component, prefix, bw_files
             | top_samples_track // 
