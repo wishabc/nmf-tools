@@ -14,11 +14,10 @@ process find_top_samples {
         tuple val(prefix), path(W), path(H), path(non_zero_peaks_mask)
 
     output:
-        tuple val(prefix), path("*.*.component_${prefix}.bw"), path(name), path(res)
+        tuple val(prefix), path("*.*.component_${prefix}.bw"), path(name)
 
     script:
     name = "${prefix}.top_samples.tsv"
-    res = "${prefix}.density_tracks_meta.tsv"
     """
     python3 $moduleDir/bin/find_top_samples.py \
         ${prefix} \
