@@ -57,6 +57,8 @@ workflow findTop {
         top_samples = data
             | find_top_samples
             | map(it -> tuple(it[0], it[1]))
+            | take(2)
+            | view()
             | transpose() // prefix, bw_file
             | map(it -> tuple(it[0], it[1].simpleName, it[1]))
             | groupTuple(by: [0, 1]) // component, prefix, bw_files
