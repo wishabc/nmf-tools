@@ -55,8 +55,7 @@ workflow {
         | map(it -> it[0])
         | distinct { it }
         | fit_nmf
-        | visualize_nmf
-        | find_top_samples
+        | (visualize_nmf & find_top_samples)
 }
 
 
