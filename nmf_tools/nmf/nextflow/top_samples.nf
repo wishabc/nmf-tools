@@ -23,7 +23,6 @@ process find_top_samples {
         ${prefix} \
         ${params.nmf_config} \
         ${W} \
-        ${H} \
         ${non_zero_peaks_mask} \
         --top ${params.top_count}
     """
