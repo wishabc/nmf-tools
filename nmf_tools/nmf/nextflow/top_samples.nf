@@ -6,7 +6,7 @@ process find_top_samples {
 
     conda params.conda
     tag "${prefix}"
-    publishDir "${params.outdir}/top_samples", pattern: "${name}"
+    publishDir "${params.outdir}/nmf/${prefix}", pattern: "${name}"
     label "highmem"
 
     input:
@@ -33,7 +33,7 @@ process top_samples_track {
     scratch true
     conda params.conda
     tag "${prefix}:${component}"
-    publishDir "${params.outdir}/top_samples/${prefix}"
+    publishDir "${params.outdir}/nmf/${prefix}/top_samples"
 
     input:
         tuple val(prefix), val(component), path(density_bw, stageAs: "?/*")
@@ -62,13 +62,12 @@ workflow findTop {
             | groupTuple(by: [0, 1]) // component, prefix, bw_files
             | top_samples_track
             | collectFile(
-                storeDir: "${params.outdir}/top_samples",
                 skip: 1,
                 keepHeader: true
             ) {
                 [
-                    "${it[0]}.components_meta.tsv", //name
-                    "component\tbw\n${it[1]}\t${params.outdir}/top_samples/${it[0]}/${it[2].name}" // content
+                    "${params.outdir}/nmf/${it[0]}/${it[0]}.components_meta.tsv", //name
+                    "component\tbw\n${it[1]}\t${params.outdir}/nmf/${it[0]}/top_samples/${it[2].name}" // content
                 ]
             }
 
