@@ -67,7 +67,7 @@ workflow findTop {
             ) {
                 [
                     "${params.outdir}/nmf/${it[0]}/${it[0]}.component_tracks_meta.tsv", //name
-                    "component\taggregated_bw\n${it[1]}\t${params.outdir}/nmf/${it[0]}/top_samples/${it[2].name}" // content
+                    "component\taggregated_bw\n${it[1]}\t${params.outdir}/nmf/${it[0]}/top_samples/${it[2].name}\n" // content
                 ]
             }
 
