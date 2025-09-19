@@ -8,6 +8,7 @@ process find_top_samples {
     tag "${prefix}"
     publishDir "${params.outdir}/top_samples", pattern: "${name}"
     publishDir "${params.outdir}/top_samples", pattern: "${res}"
+    label "highmem"
 
     input:
         tuple val(prefix), path(W), path(H), path(non_zero_peaks_mask)

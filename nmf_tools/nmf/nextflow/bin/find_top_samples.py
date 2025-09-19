@@ -5,9 +5,6 @@ import os
 from args_parser import setup_parser, parse_nmf_args
 
 
-from genome_tools.data.anndata import read_zarr_backed
-
-
 def main(W: np.ndarray, densitity_files: pd.Series, topX: int, suffix: str):
     assert W.shape[1] == densitity_files.shape[0]
     top_samples = []
