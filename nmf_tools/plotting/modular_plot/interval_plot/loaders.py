@@ -1,6 +1,6 @@
 import numpy as np
 
-from nmf_tools.plotting.modular_plot import DataLoader, DataBundle
+from nmf_tools.plotting.modular_plot import PlotDataLoader, DataBundle
 from genome_tools.genomic_interval import df_to_genomic_intervals, filter_df_to_interval, df_to_variant_intervals
 
 from genome_tools.data.extractors import TabixExtractor
@@ -14,15 +14,15 @@ except ImportError:
 
 from nmf_tools.plotting.extract_reads import extract_allelic_reads
 
-class IdeogramLoader(DataLoader):
+class IdeogramLoader(PlotDataLoader):
     __required_fields__ = ['ideogram_data']
 
 
-class GencodeLoader(DataLoader):
+class GencodeLoader(PlotDataLoader):
     __required_fields__ = ['gencode_annotation_file']
 
 
-class FinemapLoader(DataLoader):
+class FinemapLoader(PlotDataLoader):
     __required_fields__ = ['finemap_df']
 
     def _load(self, data: DataBundle, region, trait, cs_id):
@@ -33,7 +33,7 @@ class FinemapLoader(DataLoader):
         return data
     
 
-class SignalLoader(DataLoader):
+class SignalLoader(PlotDataLoader):
     __required_fields__ = []
     
     def _load(self, data, signal_files, smooth=True, step=20, bandwidth=150):
@@ -45,7 +45,7 @@ class SignalLoader(DataLoader):
         return data
 
 
-class ComponentTracksLoader(DataLoader):
+class ComponentTracksLoader(PlotDataLoader):
     __required_fields__ = ['cutcounts_files']
 
     def _load(self, data: DataBundle, smooth=True, step=20, bandwidth=150, nmf_components=None):
@@ -67,7 +67,7 @@ class ComponentTracksLoader(DataLoader):
         return data
 
 
-class SegmentsLoader(DataLoader):
+class SegmentsLoader(PlotDataLoader):
     __required_fields__ = [] # needed to be set in subclasses, first element will be used as the df to extract intervals from
     __intervals_attr__ = 'intervals'
 
@@ -100,12 +100,12 @@ class FootprintsLoader(SegmentsLoader):
     __intervals_attr__ = 'footprint_intervals'
 
 
-class DHSLoadingsLoader(DataLoader):
+class DHSLoadingsLoader(PlotDataLoader):
     __required_fields__ = ['H']
 
 
 # TODO: sample data file actually is not needed, it should be any pandas df file whatsoever
-class FootprintDatasetLoader(DataLoader):
+class FootprintDatasetLoader(PlotDataLoader):
     __required_fields__ = ['fp_sample_data_file', 'fp_sample_data']
 
     def _load(self, data: DataBundle, fp_samples, fdr_cutoff=0.05):
@@ -137,7 +137,7 @@ class FootprintDatasetLoader(DataLoader):
         return data
 
 
-class MotifLoader(DataLoader):
+class MotifLoader(PlotDataLoader):
     __required_fields__ = ['motif_annotations_path', 'motif_meta']
 
     def _load(self, data: DataBundle):
@@ -159,7 +159,7 @@ class MotifLoader(DataLoader):
         return data
 
 
-class AggregatedCAVLoader(DataLoader):
+class AggregatedCAVLoader(PlotDataLoader):
     __required_fields__ = ['cavs_data']
 
     def _load(self, data: DataBundle, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
@@ -176,7 +176,7 @@ class AggregatedCAVLoader(DataLoader):
         return data
     
 
-class PerSampleCAVLoader(DataLoader):
+class PerSampleCAVLoader(PlotDataLoader):
     __required_fields__ = ['nonaggregated_cavs_data']
 
     def _load(self, data: DataBundle, sample_id, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
@@ -190,7 +190,7 @@ class PerSampleCAVLoader(DataLoader):
         return data
 
 
-class AllelicReadsLoader(DataLoader):
+class AllelicReadsLoader(PlotDataLoader):
     __required_fields__ = ['samples_metadata']
 
     def _load(self, data: DataBundle, sample_ids, variant_interval):

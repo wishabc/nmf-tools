@@ -141,7 +141,7 @@ class PlotComponent(LoggerMixin):
         raise NotImplementedError("Plot method should be implemented in subclasses.")
     
 
-class DataLoader(LoggerMixin):
+class PlotDataLoader(LoggerMixin):
     """
     Base class for all data loaders.
     Each loader should also specify the required_fields,
@@ -207,7 +207,11 @@ class DataLoader(LoggerMixin):
             raise ValueError(f"Loader {self.__class__.__name__} is missing required argument(s): {', '.join(missing_args)}")
 
 
-PlotDataLoader = DataLoader
+class DataLoader(PlotDataLoader):
+
+    def __init__(self, preprocessor, interval, logger_level=None):
+        print("DataLoader is deprecated and will be soon removed. Please use PlotDataLoader instead.")
+        super().__init__(preprocessor, interval, logger_level=logger_level)
 
 
 class RequiredArgument:
@@ -238,7 +242,7 @@ def uses_loaders(*loaders):
 def _collect_all_kwargs(*loaders):
     loader_kwargs = {}
     for loader in loaders[::-1]:
-        if not issubclass(loader, DataLoader):
+        if not issubclass(loader, PlotDataLoader):
             raise ValueError(f"Loader {loader} is not a subclass of DataLoader.")
         loader_kwargs.update(loader.get_fullargspec())
     return loader_kwargs
