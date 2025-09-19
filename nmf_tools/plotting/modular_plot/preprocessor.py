@@ -72,8 +72,7 @@ class DataPreprocessor(LoggerMixin):
             component.load_data(
                 self,
                 self._parse_interval(interval, getattr(component, 'interval_key', None)),
-                **self.data_kwargs,
-                **data_kwargs
+                **{**self.data_kwargs, **data_kwargs},
             )
             for component in plot_components
         ]
