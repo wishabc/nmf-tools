@@ -20,10 +20,13 @@ def main(W: np.ndarray, densitity_files: pd.Series, topX: int, suffix: str):
         for sample in sorted_indices[:topX]:
             path = densitity_files.iloc[sample]
             ag_id = densitity_files.index[sample]
-            os.symlink(
-                path,
-                f'{component}.{ag_id}.component_{suffix}.bw'
-            )
+            try: 
+                os.symlink(
+                    path,
+                    f'{component}.{ag_id}.component_{suffix}.bw'
+                )
+            except TypeError:
+                print(path)
             top_samples.append([ag_id, component])
     return pd.DataFrame.from_records(top_samples, columns=['ag_id', 'component'])
 
