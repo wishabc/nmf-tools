@@ -34,7 +34,6 @@ if __name__ == "__main__":
     print('Adding options to parser')
     parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('non_zero_peaks_mask', help='Non-zero peaks mask')
-    parser.add_argument('path_to_bw', help='Path to aggregated bw output files (will be created on the next pipeline step)')
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
     parser.add_argument('--top', type=int, default=10, help='Number of top samples to select')
 
