@@ -43,6 +43,6 @@ if __name__ == "__main__":
     nmf_data = parse_nmf_args(args.prefix, args.config)
     W = np.load(args.W).T
 
-    density_tracks = nmf_data.samples_metadata['normalize_density']
+    density_tracks = nmf_data.samples_metadata['normalized_density_bw']
     top_samples = main(W, density_tracks, topX=args.top, suffix=args.prefix)
     top_samples.to_csv(f"{args.prefix}.top_samples.tsv", index=False, sep="\t")
