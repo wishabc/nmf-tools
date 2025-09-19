@@ -18,6 +18,7 @@ process find_top_samples {
     script:
     name = "${prefix}.top_samples.tsv"
     """
+    echo 1
     python3 $moduleDir/bin/find_top_samples.py \
         ${prefix} \
         ${params.nmf_config} \
