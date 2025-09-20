@@ -5,6 +5,7 @@ from typing import List, Type
 import types
 from nmf_tools.plotting.modular_plot.shared import LoggerMixin, DataBundle
 from makefun import wraps, add_signature_parameters, remove_signature_parameters, with_signature
+import warnings
 
 
 class PlotDataLoader(LoggerMixin):
@@ -19,19 +20,18 @@ class PlotDataLoader(LoggerMixin):
 
     def __init__(self, logger_level=None):
         LoggerMixin.__init__(self, logger_level=logger_level)
-        if self._load is PlotDataLoader._load:
-            self._set_default_load()
 
-    def _set_default_load(self):
+    @classmethod
+    def _set_default_load(cls):
         """
         Set the default load method if not already set.
         """
-        if len(self.required_loader_kwargs) == 0:
-            self.logger.warning(
-                f"Loader {self.__class__.__name__} has no required_loader_kwargs and no _load method implemented. The loader does not modify the data."
+        if len(cls.required_loader_kwargs) == 0:
+            warnings.warn(
+                f"Loader {cls.__name__} has no required_loader_kwargs and no _load method implemented. The loader does not modify the data."
             )
 
-        args_string = ', '.join(self.required_loader_kwargs)
+        args_string = ', '.join(cls.required_loader_kwargs)
         @with_signature(f"_load(self, data, {args_string})")
         def _default_load(self, data, **kwargs):
             """
@@ -43,7 +43,7 @@ class PlotDataLoader(LoggerMixin):
                 setattr(data, field, value)
             return data
 
-        self._load = types.MethodType(_default_load, self)
+        cls._load = types.MethodType(_default_load, cls)
 
     @classmethod
     def get_fullargspec(cls):
@@ -52,6 +52,8 @@ class PlotDataLoader(LoggerMixin):
         Returns a dictionary of the arguments and their default values,
         excluding the 'self' and 'data' arguments.
         """
+        if cls._load is PlotDataLoader._load:
+            cls._set_default_load()
         fullargspec = inspect.getfullargspec(cls._load)
         if fullargspec.varkw is not None or fullargspec.varargs is not None:
             raise ValueError(f"{cls.__name__} '_load' method should not have *args or **kwargs.")
@@ -143,14 +145,15 @@ class PlotComponent(LoggerMixin):
         Modifies data for the plot component using the required loaders load function.
         """
         for LoaderClass in self.__required_loaders__:
-            loader = LoaderClass(
-                logger_level=self.logger.level
-            )
             all_loader_kwargs = {**self.loader_kwargs, **loader_kwargs}
             all_loader_kwargs = {
                 k: v for k, v in all_loader_kwargs.items()
-                if k in loader.get_fullargspec()
+                if k in LoaderClass.get_fullargspec()
             }
+
+            loader = LoaderClass(
+                logger_level=self.logger.level
+            )
             data = loader.load(data, **all_loader_kwargs)
             data.processed_loaders.append(LoaderClass)
         return data
