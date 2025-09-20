@@ -26,6 +26,10 @@ class PlotDataLoader(LoggerMixin):
         super().__init_subclass__(**kwargs)
         if cls._load is PlotDataLoader._load:
             cls._set_default_load()
+        elif len(cls.required_loader_kwargs) > 0:
+            warnings.warn(
+                f"Both required_loader_kwargs and _load are specified for loader {cls.__name__}. required_loader_kwargs are ignored."
+            )
 
     @classmethod
     def _set_default_load(cls):

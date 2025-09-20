@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from nmf_tools.plotting.modular_plot import PlotDataLoader, DataBundle
 from genome_tools.genomic_interval import df_to_genomic_intervals, filter_df_to_interval, df_to_variant_intervals
@@ -16,18 +17,17 @@ from nmf_tools.plotting.extract_reads import extract_allelic_reads
 
 
 class IdeogramLoader(PlotDataLoader):
-    __required_fields__ = ['ideogram_data']
+    required_loader_kwargs = ['ideogram_data']
 
 
 class GencodeLoader(PlotDataLoader):
-    __required_fields__ = ['gencode_annotation_file']
+    required_loader_kwargs = ['gencode_annotation_file']
 
 
 class FinemapLoader(PlotDataLoader):
-    __required_fields__ = ['finemap_df']
 
-    def _load(self, data: DataBundle, region, trait, cs_id):
-        finemap_df = self.preprocessor.finemap_df.query(
+    def _load(self, data: DataBundle, finemap_df: pd.DataFrame, region, trait, cs_id):
+        finemap_df = finemap_df.query(
             f'region == "{region}" & trait == "{trait}" & cs_id == {cs_id}'
         ).drop_duplicates('end')
         data.unique_finemap_df = finemap_df
@@ -35,7 +35,6 @@ class FinemapLoader(PlotDataLoader):
     
 
 class SignalLoader(PlotDataLoader):
-    __required_fields__ = []
     
     def _load(self, data, signal_files, smooth=True, step=20, bandwidth=150):
         if not smooth:
@@ -47,13 +46,11 @@ class SignalLoader(PlotDataLoader):
 
 
 class ComponentTracksLoader(PlotDataLoader):
-    __required_fields__ = ['cutcounts_files']
 
-    def _load(self, data: DataBundle, smooth=True, step=20, bandwidth=150, nmf_components=None):
+    def _load(self, data: DataBundle, cutcounts_files, smooth=True, step=20, bandwidth=150, nmf_components=None):
         if not smooth:
             bandwidth = 1
 
-        cutcounts_files = self.preprocessor.cutcounts_files
         if nmf_components is None:
             nmf_components = cutcounts_files.keys()
 
@@ -67,9 +64,8 @@ class ComponentTracksLoader(PlotDataLoader):
             data.component_tracks.append(segs)
         return data
 
-
+# FIXME
 class SegmentsLoader(PlotDataLoader):
-    __required_fields__ = [] # needed to be set in subclasses, first element will be used as the df to extract intervals from
     __intervals_attr__ = 'intervals'
 
     def _load(self, data: DataBundle, extra_columns=None, rectprops_columns=None):
@@ -92,27 +88,26 @@ class SegmentsLoader(PlotDataLoader):
 
 
 class DHSIndexLoader(SegmentsLoader):
-    __required_fields__ = ['annotated_dhs_index']
+    required_loader_kwargs = ['annotated_dhs_index']
     __intervals_attr__ = 'dhs_intervals'
 
 
 class FootprintsLoader(SegmentsLoader):
-    __required_fields__ = ['full_footprints_index']
+    required_loader_kwargs = ['full_footprints_index']
     __intervals_attr__ = 'footprint_intervals'
 
 
 class DHSLoadingsLoader(PlotDataLoader):
-    __required_fields__ = ['H']
+    required_loader_kwargs = ['H']
 
 
 # TODO: sample data file actually is not needed, it should be any pandas df file whatsoever
 class FootprintDatasetLoader(PlotDataLoader):
-    __required_fields__ = ['fp_sample_data_file', 'fp_sample_data']
 
-    def _load(self, data: DataBundle, fp_samples, fdr_cutoff=0.05):
+    def _load(self, data: DataBundle, fp_sample_data_file, fp_sample_data, fp_samples, fdr_cutoff=0.05):
         dl = PosteriorStats(
-            self.preprocessor.fp_sample_data_file,
-            self.preprocessor.fp_sample_data.loc[fp_samples],
+            fp_sample_data_file,
+            fp_sample_data.loc[fp_samples],
             fdr_cutoff=fdr_cutoff,
         )
         dl._open_tabix_files()
@@ -139,15 +134,14 @@ class FootprintDatasetLoader(PlotDataLoader):
 
 
 class MotifLoader(PlotDataLoader):
-    __required_fields__ = ['motif_annotations_path', 'motif_meta']
 
-    def _load(self, data: DataBundle):
-        interval_motif_annotations = TabixExtractor(self.preprocessor.motif_annotations_path,
+    def _load(self, data: DataBundle, motif_annotations_path, motif_meta):
+        interval_motif_annotations = TabixExtractor(motif_annotations_path,
                                                     columns=[
                                                         'chrom', 'start', 'end', 'fp_id',
                                                         'motif_chr', 'motif_start', 'motif_end',
                                                         'pfm', 'dg', 'orient', 'sequence'
-                                                        ])[self.interval]
+                                                        ])[data.interval]
         interval_motif_annotations['dg'] = interval_motif_annotations['dg'].astype(float)
         interval_motif_annotations['start'] = interval_motif_annotations['start'].astype(int)
         interval_motif_annotations['end'] = interval_motif_annotations['end'].astype(int)
@@ -155,16 +149,19 @@ class MotifLoader(PlotDataLoader):
         interval_motif_annotations['motif_end'] = interval_motif_annotations['motif_end'].astype(int)
         interval_motif_annotations = interval_motif_annotations.groupby('fp_id', group_keys=False).apply(lambda x: x.nlargest(1, 'dg'))
         interval_motif_annotations['motif_id'] = interval_motif_annotations['pfm'].str.replace('.pfm', '')
-        interval_motif_annotations = interval_motif_annotations.merge(self.preprocessor.motif_meta, left_on='motif_id', right_index=True)
-        data.motif_intervals = df_to_genomic_intervals(interval_motif_annotations, self.interval, extra_columns=['orient', 'motif_start', 'motif_end', 'tf_name', 'pwm'])
+        interval_motif_annotations = interval_motif_annotations.merge(motif_meta, left_on='motif_id', right_index=True)
+        data.motif_intervals = df_to_genomic_intervals(
+            interval_motif_annotations,
+            data.interval,
+            extra_columns=['orient', 'motif_start', 'motif_end', 'tf_name', 'pwm']
+        )
         return data
 
 
 class AggregatedCAVLoader(PlotDataLoader):
-    __required_fields__ = ['cavs_data']
 
-    def _load(self, data: DataBundle, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
-        filtered_cavs = filter_df_to_interval(self.preprocessor.cavs_data, self.interval)
+    def _load(self, data: DataBundle, cavs_data, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
+        filtered_cavs = filter_df_to_interval(cavs_data, data.interval)
         filtered_cavs['is_significant'] = filtered_cavs['min_fdr'] <= fdr_tr
         filtered_cavs['sig_es'] = np.clip(np.where(filtered_cavs['is_significant'], np.abs(filtered_cavs['logit_es_combined']), 0), 0, 2)
         group_ids_df = filtered_cavs.query('is_significant').groupby(['#chr', 'start', 'end', 'ref', 'alt'])['group_id'].apply(lambda x: ','.join(map(str, x))).reset_index()
@@ -180,8 +177,8 @@ class AggregatedCAVLoader(PlotDataLoader):
 class PerSampleCAVLoader(PlotDataLoader):
     __required_fields__ = ['nonaggregated_cavs_data']
 
-    def _load(self, data: DataBundle, sample_id, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
-        filtered_cavs = TabixExtractor(self.preprocessor.nonaggregated_cavs_data)[self.interval].query(f'sample_id == "{sample_id}"')
+    def _load(self, data: DataBundle, nonaggregated_cavs_data, sample_id, fdr_tr=0.1, color='k', notsignif_color='#C0C0C0'):
+        filtered_cavs = TabixExtractor(nonaggregated_cavs_data)[data.interval].query(f'sample_id == "{sample_id}"')
         filtered_cavs['is_significant'] = filtered_cavs['FDR_sample'] <= fdr_tr
         filtered_cavs['sig_es'] = np.clip(np.where(filtered_cavs['is_significant'], np.abs(filtered_cavs['logit_es']), 0), 0, 2)
         
@@ -194,10 +191,10 @@ class PerSampleCAVLoader(PlotDataLoader):
 class AllelicReadsLoader(PlotDataLoader):
     __required_fields__ = ['samples_metadata']
 
-    def _load(self, data: DataBundle, sample_ids, variant_interval):
+    def _load(self, data: DataBundle, sample_ids, samples_metadata, variant_interval):
         if isinstance(sample_ids, (str, int, float)):
             sample_ids = [sample_ids]
-        cram_paths = self.preprocessor.samples_metadata.loc[sample_ids, 'cram_file']
+        cram_paths = samples_metadata.loc[sample_ids, 'cram_file']
         reads = {}
         for sample_id, cram_path in zip(sample_ids, cram_paths):
             reads[sample_id] = extract_allelic_reads(cram_path, variant_interval, data.interval)
