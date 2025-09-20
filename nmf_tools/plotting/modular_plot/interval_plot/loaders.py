@@ -68,22 +68,26 @@ class ComponentTracksLoader(PlotDataLoader):
 class SegmentsLoader(PlotDataLoader):
     __intervals_attr__ = 'intervals'
 
-    def _load(self, data: DataBundle, extra_columns=None, rectprops_columns=None):
+    def _load(self, data: DataBundle, segments_df: pd.DataFrame, extra_columns=None, rectprops_columns=None):
         if rectprops_columns is None:
             rectprops_columns = []
         if extra_columns is None:
             extra_columns = []
-        segments_df = getattr(self.preprocessor, self.__required_fields__[0])
-        setattr(data, self.__intervals_attr__, 
-                df_to_genomic_intervals(
-            segments_df.reset_index(drop=True).reset_index(),
-            self.interval,
-            extra_columns=['index'] + extra_columns + rectprops_columns
-        ))
+        setattr(
+            data,
+            self.__intervals_attr__, 
+            df_to_genomic_intervals(
+                segments_df.reset_index(drop=True).reset_index(),
+                data.interval,
+                extra_columns=['index'] + extra_columns + rectprops_columns
+            )
+        )
 
         if rectprops_columns:
             for interval in getattr(data, self.__intervals_attr__):
-                interval.rectprops = {col: getattr(interval, col) for col in rectprops_columns}
+                interval.rectprops = {
+                    col: getattr(interval, col) for col in rectprops_columns
+                    }
         return data
 
 
