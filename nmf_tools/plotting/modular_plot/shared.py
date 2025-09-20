@@ -38,6 +38,9 @@ class DataBundle(LoggerMixin):
         self._initialized_attributes.add(name)
         super().__setattr__(name, value)
 
+    def __repr__(self):
+        return f"DataBundle({', '.join(self._initialized_attributes)})"
+
     def copy(self):
         """
         Create a shallow copy of the data bundle.
