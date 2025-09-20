@@ -32,7 +32,7 @@ setup(
     },
     install_requires=['pandas', 'numpy', 'matplotlib>=3.3.3',
                     'scikit-learn', 'seaborn', 'statsmodels',
-                    'jupyterlab'],
+                    'makefun'],
     python_requires='>=3.8',
     data_files=[("", ["LICENSE"])]
 )

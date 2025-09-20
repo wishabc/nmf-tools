@@ -22,6 +22,12 @@ class PlotDataLoader(LoggerMixin):
         LoggerMixin.__init__(self, logger_level=logger_level)
 
     @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls._load is PlotDataLoader._load:
+            cls._set_default_load()
+
+    @classmethod
     def _set_default_load(cls):
         """
         Set the default load method if not already set.
@@ -52,8 +58,6 @@ class PlotDataLoader(LoggerMixin):
         Returns a dictionary of the arguments and their default values,
         excluding the 'self' and 'data' arguments.
         """
-        if cls._load is PlotDataLoader._load:
-            cls._set_default_load()
         fullargspec = inspect.getfullargspec(cls._load)
         if fullargspec.varkw is not None or fullargspec.varargs is not None:
             raise ValueError(f"{cls.__name__} '_load' method should not have *args or **kwargs.")
