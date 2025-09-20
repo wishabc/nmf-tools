@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 import pandas as pd
 
-from .plot_components import VerticalPlotComponent
+from .plot_components import IntervalPlotComponent
 
 from nmf_tools.plotting.modular_plot import LoggerMixin, PlotComponent
 
@@ -54,7 +54,7 @@ class IntervalPlotter(LoggerMixin):
     # Plot the interval
     component_axes = interval_plotter.plot_interval(data)
     """
-    def __init__(self, plot_components: Sequence[VerticalPlotComponent],
+    def __init__(self, plot_components: Sequence[IntervalPlotComponent],
                  inches_per_unit=1.0, width=2.5, **kwargs):
         super().__init__(**kwargs)
         self.component_names = [c.name for c in plot_components]

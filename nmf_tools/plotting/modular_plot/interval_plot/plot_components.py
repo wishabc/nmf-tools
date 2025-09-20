@@ -1,15 +1,13 @@
-from nmf_tools.plotting.modular_plot import PlotComponent, uses_loaders
-from matplotlib.offsetbox import TextArea, VPacker, HPacker, AnnotationBbox
+from nmf_tools.plotting.modular_plot import PlotComponent
+from matplotlib.offsetbox import TextArea, HPacker, AnnotationBbox
 
-import numpy as np
 
 from .loaders import *
 
 from typing import Union, Sequence
-from matplotlib import gridspec
 import matplotlib.pyplot as plt
 
-from genome_tools.plotting import signal_plot, segment_plot
+from genome_tools.plotting import segment_plot
 from genome_tools.plotting.gene_annotation import gene_annotation_plot
 from genome_tools.plotting.ideogram import ideogram_plot
 from genome_tools.plotting.utils import clear_spines
@@ -21,7 +19,7 @@ from nmf_tools import in_vierstra_style
 from nmf_tools.plotting.matrices_barplots import component_barplot
 
 
-class VerticalPlotComponent(PlotComponent):
+class IntervalPlotComponent(PlotComponent):
     """
     An extension of the PlotComponent class that plots data vertically.
 
@@ -136,7 +134,7 @@ class VerticalPlotComponent(PlotComponent):
         return axes
 
 
-class SingleBPObjectsComponent(VerticalPlotComponent):
+class SingleBPObjectsComponent(IntervalPlotComponent):
     """
     A vertical plot component that plots single base pair objects
     within a genomic interval.
@@ -147,7 +145,7 @@ class SingleBPObjectsComponent(VerticalPlotComponent):
     kwargs are passed to the scatter plot function.
     """
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
         self.plot_single_bp_objects(data.positions, data.values, data.interval, ax=ax, **kwargs)
         return ax
@@ -194,14 +192,17 @@ class SingleBPObjectsComponent(VerticalPlotComponent):
         return ax
 
 
-class SegmentPlotComponent(VerticalPlotComponent):
+class SegmentPlotComponent(IntervalPlotComponent):
     __intervals_attr__ = 'intervals'
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
         segment_plot(data.interval, getattr(data, self.__intervals_attr__), ax=ax, **kwargs)
         ax.set_xticks([])
         ax.set_yticks([])
         clear_spines(ax)
         return ax
+
+
+VerticalPlotComponent = IntervalPlotComponent

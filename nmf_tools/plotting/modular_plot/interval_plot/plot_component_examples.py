@@ -1,5 +1,5 @@
 from nmf_tools.plotting.modular_plot import uses_loaders
-from nmf_tools.plotting.modular_plot.interval_plot.plot_components import VerticalPlotComponent, SingleBPObjectsComponent, SegmentPlotComponent
+from nmf_tools.plotting.modular_plot.interval_plot.plot_components import IntervalPlotComponent, SingleBPObjectsComponent, SegmentPlotComponent
 
 import numpy as np
 
@@ -21,7 +21,7 @@ from nmf_tools.plotting.matrices_barplots import component_barplot
 
 
 @uses_loaders(IdeogramLoader)
-class IdeogramComponent(VerticalPlotComponent):
+class IdeogramComponent(IntervalPlotComponent):
     
     @in_vierstra_style
     def _plot(self, data, ax, **kwargs):
@@ -30,10 +30,10 @@ class IdeogramComponent(VerticalPlotComponent):
 
 
 @uses_loaders(GencodeLoader)
-class GencodeComponent(VerticalPlotComponent):
+class GencodeComponent(IntervalPlotComponent):
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
         try:
             gene_annotation_plot(data.interval, data.gencode_annotation_file, ax=ax,
@@ -59,7 +59,7 @@ class FinemapComponent(SingleBPObjectsComponent):
     
 
 @uses_loaders(SignalLoader)
-class TrackComponent(VerticalPlotComponent):
+class TrackComponent(IntervalPlotComponent):
 
     @in_vierstra_style
     def _plot(self, data, ax, **kwargs):
@@ -69,10 +69,10 @@ class TrackComponent(VerticalPlotComponent):
 
 
 @uses_loaders(ComponentTracksLoader)
-class NMFTracksComponent(VerticalPlotComponent):
+class NMFTracksComponent(IntervalPlotComponent):
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, component_data, **kwargs):
         density_axes = self.plot_component_tracks(data.interval, data.nmf_components,
                                                   data.component_tracks, component_data,
@@ -134,10 +134,10 @@ class FootprintsComponent(SegmentPlotComponent):
 
 
 @uses_loaders(DHSIndexLoader, DHSLoadingsLoader)
-class DHSLoadingsComponent(VerticalPlotComponent):
+class DHSLoadingsComponent(IntervalPlotComponent):
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, component_data, bp_width=50, **kwargs):
         ax.axis('off')
         axes = self.add_axes_at_middle_points(data.dhs_intervals, data.interval, ax=ax, bp_width=bp_width)
@@ -152,10 +152,10 @@ class DHSLoadingsComponent(VerticalPlotComponent):
 
 
 @uses_loaders(FootprintDatasetLoader)
-class FootprintTrackComponent(VerticalPlotComponent):
+class FootprintTrackComponent(IntervalPlotComponent):
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, smpl_idx=0, color='k', exp_color='C1', lw=0.5, kind='pp', **kwargs):
         xs = self.squarify_array(np.arange(data.pp.shape[1] + 1) + data.interval.start)
         if kind == 'pp':
@@ -172,10 +172,10 @@ class FootprintTrackComponent(VerticalPlotComponent):
 
 
 @uses_loaders(MotifLoader)
-class MotifComponent(VerticalPlotComponent):
+class MotifComponent(IntervalPlotComponent):
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
         ax.axis('off')
         axes = self.add_axes_at_middle_points(data.motif_intervals, data.interval, ax=ax)
@@ -194,7 +194,7 @@ class MotifComponent(VerticalPlotComponent):
 class CAVComponent(SingleBPObjectsComponent):
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, **kwargs):
 
         self.plot_single_bp_objects(
@@ -216,10 +216,10 @@ class NonAggregatedCAVComponent(CAVComponent):
 
 
 @uses_loaders(AllelicReadsLoader)
-class AllelicReadsComponent(VerticalPlotComponent):
+class AllelicReadsComponent(IntervalPlotComponent):
 
     @in_vierstra_style
-    @VerticalPlotComponent.set_xlim_interval
+    @IntervalPlotComponent.set_xlim_interval
     def _plot(self, data, ax, only_variant_overlap=False, **kwargs):
         reads = []
         for sample_id, sample_reads in data.reads.items():

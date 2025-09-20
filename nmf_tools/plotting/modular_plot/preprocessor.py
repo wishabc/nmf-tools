@@ -1,12 +1,13 @@
-from nmf_tools.plotting.modular_plot import LoggerMixin
-from nmf_tools.plotting.modular_plot.interval_plot.plot_components import VerticalPlotComponent
 
-from . import LoggerMixin
+from nmf_tools.plotting.modular_plot.interval_plot.plot_components import IntervalPlotComponent
+from nmf_tools.plotting.modular_plot.shared import LoggerMixin, DataBundle
+
+from genome_tools import GenomicInterval
 
 from typing import Sequence
 
 
-class DataPreprocessor(LoggerMixin):
+class IntervalDataPreprocessor(LoggerMixin):
     """
     An extension of the DataPreprocessor class that can handle multiple intervals.
     The get_interval_data method is modified to accept a dict of intervals,
@@ -38,8 +39,8 @@ class DataPreprocessor(LoggerMixin):
 
     def get_interval_data(
             self,
-            interval,
-            plot_components: Sequence[VerticalPlotComponent],
+            interval: GenomicInterval,
+            plot_components: Sequence[IntervalPlotComponent],
             **data_kwargs
         ):
         """
@@ -59,8 +60,8 @@ class DataPreprocessor(LoggerMixin):
 
         Returns
         -------
-        data : list[DataBundle]
-            A list of DataBundle objects containing the data for each plot component
+        data : Iter[DataBundle]
+            A Iter of DataBundle objects containing the data for each plot component
         """
         common_kwargs = set(data_kwargs) & set(self.data_kwargs)
         if common_kwargs:
@@ -68,11 +69,18 @@ class DataPreprocessor(LoggerMixin):
                 f"Found {len(common_kwargs)} overlapping data kwargs: {list(common_kwargs)}"
             )
             self.logger.debug("Using values passed to get_interval_data function.")
-        return [
-            component.load_data(
-                self,
-                self._parse_interval(interval, getattr(component, 'interval_key', None)),
-                **{**self.data_kwargs, **data_kwargs},
+
+        for component in plot_components:
+            data = DataBundle(
+                interval=self._parse_interval(
+                    interval,
+                    getattr(component, 'interval_key', None)
+                )
             )
-            for component in plot_components
-        ]
+            yield component.load_data(
+                data,
+                **{**self.data_kwargs, **data_kwargs}
+            )
+
+
+DataPreprocessor = IntervalDataPreprocessor

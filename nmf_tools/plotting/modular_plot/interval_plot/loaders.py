@@ -14,6 +14,7 @@ except ImportError:
 
 from nmf_tools.plotting.extract_reads import extract_allelic_reads
 
+
 class IdeogramLoader(PlotDataLoader):
     __required_fields__ = ['ideogram_data']
 
