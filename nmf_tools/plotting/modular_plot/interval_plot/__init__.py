@@ -3,11 +3,13 @@ from collections import namedtuple
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 
+from genome_tools import GenomicInterval
 import pandas as pd
 
-from .plot_components import IntervalPlotComponent
+from nmf_tools.plotting.modular_plot.interval_plot.plot_components import IntervalPlotComponent
 
-from nmf_tools.plotting.modular_plot import LoggerMixin, PlotComponent
+from nmf_tools.plotting.modular_plot import LoggerMixin, PlotComponent, DataBundle
+
 
 
 class IntervalPlotter(LoggerMixin):
@@ -29,8 +31,6 @@ class IntervalPlotter(LoggerMixin):
 
     Usage
     -----
-    # Define the preprocessor
-    preprocessor = MultipleIntervalDataPreprocessor(...)
 
     # Define plot components
     plot_components = [
@@ -49,14 +49,14 @@ class IntervalPlotter(LoggerMixin):
     interval_plotter = IntervalPlotter(plot_components)
 
     # Get the data for the interval
-    data = preprocessor.get_interval_data(interval, plot_components)
+    data = interval_plotter.get_interval_data(interval)
 
     # Plot the interval
     component_axes = interval_plotter.plot_interval(data)
     """
     def __init__(self, plot_components: Sequence[IntervalPlotComponent],
-                 inches_per_unit=1.0, width=2.5, **kwargs):
-        super().__init__(**kwargs)
+                 inches_per_unit=1.0, width=2.5, **data_kwargs):
+        self.data_kwargs = data_kwargs
         self.component_names = [c.name for c in plot_components]
 
         repeating_names = self._check_unique_component_names(self.component_names)
@@ -137,12 +137,16 @@ class IntervalPlotter(LoggerMixin):
         """
         Setup a default figure with the appropriate size for the vertical components.
         """
-        return plt.figure(figsize=(
-            self.inches_per_unit * self.width,
-            sum(x for c in self.plot_components for x in [c.margin_top, c.height, c.margin_bottom]) * self.inches_per_unit
-        ))
+        return plt.figure(
+            figsize=(self.inches_per_unit * self.width,
+                sum(
+                    x for c in self.plot_components 
+                    for x in [c.margin_top, c.height, c.margin_bottom]
+                ) * self.inches_per_unit
+            )
+        )
 
-    def plot_interval(self, data, fig=None, gridspecs=None, **kwargs):
+    def plot_interval(self, data: Sequence[DataBundle], fig=None, gridspecs=None, **kwargs):
         """
         Plot the genomic interval with all the provided vertical plot components.
 
@@ -184,3 +188,64 @@ class IntervalPlotter(LoggerMixin):
 
         return component_axes
 
+    @staticmethod
+    def _parse_interval(interval, interval_key: str):
+        """
+        Parse the interval argument to a GenomicInterval object.
+        If a dict is provided, the interval_key is used to extract the interval.
+        """
+        if isinstance(interval, dict):
+            try:
+                return interval[interval_key]
+            except KeyError:
+                raise ValueError(f"Interval key '{interval_key}' not found.")
+        else:
+            return interval
+
+    def get_interval_data(
+            self,
+            interval: GenomicInterval,
+            **data_kwargs
+        ):
+        """
+        Get the data for the specified interval(s) and plot components.
+
+        Parameters
+        ----------
+        interval : GenomicInterval or dict {key: GenomicInterval}
+            The genomic interval to plot.
+            If a dict is provided, the component-specific interval key is used to extract the interval.
+
+        plot_components : Sequence[VerticalPlotComponent]
+            The vertical plot components to plot.
+
+        **data_kwargs : dict
+            Keyword arguments to pass to the loaders function.
+
+        Returns
+        -------
+        data : Iter[DataBundle]
+            A Iter of DataBundle objects containing the data for each plot component
+        """
+        common_kwargs = set(data_kwargs) & set(self.data_kwargs)
+        if common_kwargs:
+            self.logger.debug(
+                f"Found {len(common_kwargs)} overlapping data kwargs: {list(common_kwargs)}"
+            )
+            self.logger.debug("Using values passed to get_interval_data function.")
+
+        result = []
+        for component in self.plot_components:
+            data = DataBundle(
+                interval=self._parse_interval(
+                    interval,
+                    getattr(component, 'interval_key', None)
+                )
+            )
+            result.append(
+                component.load_data(
+                    data,
+                    **{**self.data_kwargs, **data_kwargs}
+                )
+            )
+        return self.CompTuple(result)
