@@ -93,9 +93,9 @@ class PlotDataLoader(LoggerMixin):
 
 class DataLoader(PlotDataLoader):
 
-    def __init__(self, preprocessor, interval, logger_level=None):
+    def __init__(self, logger_level=None):
         print("DataLoader is deprecated and will be soon removed. Please use PlotDataLoader instead.")
-        super().__init__(preprocessor, interval, logger_level=logger_level)
+        super().__init__(logger_level=logger_level)
 
 
 class PlotComponent(LoggerMixin):
@@ -237,7 +237,7 @@ def _update_signature(original_init, loader_kwargs: dict):
     ]
     signature = add_signature_parameters(
         signature,
-        **params
+        last=[params]
     )
 
     signature = add_signature_parameters(
