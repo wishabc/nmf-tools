@@ -237,7 +237,7 @@ def _update_signature(original_init, loader_kwargs: dict):
     ]
     signature = add_signature_parameters(
         signature,
-        last=[params]
+        last=params
     )
 
     signature = add_signature_parameters(
