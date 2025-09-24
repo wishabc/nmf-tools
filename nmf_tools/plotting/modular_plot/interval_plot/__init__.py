@@ -248,4 +248,4 @@ class IntervalPlotter(LoggerMixin):
                     **{**self.data_kwargs, **data_kwargs}
                 )
             )
-        return self.CompTuple(result)
+        return self.CompTuple(*result)
