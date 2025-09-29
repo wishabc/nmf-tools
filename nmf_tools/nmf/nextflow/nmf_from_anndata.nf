@@ -61,7 +61,7 @@ workflow {
 
 // Entry for visuzizations only
 workflow visualize {
-    params.nmf_results_path = './output/'
+    params.nmf_results_path = "${params.outdir}"  // default location where nf output goes
     println "Visualizing NMF results from params.nmf_params_list = ${params.nmf_params_list}. Assuming nf output folder to be params.nmf_results_path=${params.nmf_results_path}"
     
     Channel.fromPath(params.nmf_params)
@@ -71,9 +71,9 @@ workflow visualize {
         | map( 
             it -> tuple(
                 it,
-                file("${params.nmf_results_path}/${it}/${it}.W.npy"),
-                file("${params.nmf_results_path}/${it}/${it}.H.npy"),
-                file("${params.nmf_results_path}/${it}/${it}.non_zero_peaks_mask.txt"),
+                file("${params.nmf_results_path}/nmf/${it}/${it}.W.npy"),
+                file("${params.nmf_results_path}/nmf/${it}/${it}.H.npy"),
+                file("${params.nmf_results_path}/nmf/${it}/${it}.non_zero_peaks_mask.txt"),
             )
         )
         | visualize_nmf
