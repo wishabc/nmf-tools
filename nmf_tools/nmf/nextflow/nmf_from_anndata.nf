@@ -62,7 +62,7 @@ workflow {
 // Entry for visuzizations only
 workflow visualize {
     params.nmf_results_path = "${params.outdir}"  // default location where nf output goes
-    println "Visualizing NMF results from params.nmf_params_list = ${params.nmf_params_list}. Assuming nf output folder to be params.nmf_results_path=${params.nmf_results_path}"
+    println "Visualizing NMF results from params.nmf_params = ${params.nmf_params}. Assuming nf output folder to be params.nmf_results_path=${params.nmf_results_path}"
     
     Channel.fromPath(params.nmf_params)
         | splitCsv(header: false)
