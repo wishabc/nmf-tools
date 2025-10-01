@@ -63,7 +63,7 @@ workflow findTop {
             | top_samples_track
             | collectFile(
                 skip: 1,
-                keepHeader: true
+                keepHeader: true,
                 storeDir: "${params.outdir}/nmf/"
             ) {
                 [
