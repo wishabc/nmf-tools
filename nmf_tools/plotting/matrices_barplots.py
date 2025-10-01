@@ -245,7 +245,6 @@ def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_c
         )
         ax.set_title(f'{row["name"]}', fontsize=4, pad=2)
         xlims.append(ax.get_xlim())
-        ax.set_ylim(0,)
         axes.append(ax)
     if common_scale:
         for ax in axes:
