@@ -137,8 +137,10 @@ class NMFModel:
             error_at_init=error_at_init
         )
         if self.fit_mode == 'scaled_X':
-            W = W / np.sqrt(weights_params['W_weights'])
-            H = H / np.sqrt(weights_params['H_weights'])
+            W_weights = np.asarray(W_weights)
+            H_weights = np.asarray(H_weights)
+            W = W / np.sqrt(W_weights[:, None])
+            H = H / np.sqrt(H_weights[None, :])
         return W, H
 
     @validate_input_args
