@@ -196,7 +196,7 @@ def plot_contours(x, y, z, mask_radius=1.5, sigma=50, levels=50, linewidths=0.2,
 
     ax.axis('off')
 
-    ax.contour(X, Y, distance_mask.astype(float), levels=[0.5], colors='grey', linestyles='solid', linewidths=lw_outer)
+    ax.contour(X, Y, distance_mask.astype(float), levels=[0.5], colors='grey', linestyles='solid', linewidths=lw_outer, **kwargs)
 
     # Now, create a separate figure with a colorbar.
     # We'll use the min and max of the masked grid (ignoring NaNs)
