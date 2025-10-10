@@ -92,13 +92,26 @@ class SegmentsLoader(PlotDataLoader):
 
 
 class DHSIndexLoader(SegmentsLoader):
-    required_loader_kwargs = ['annotated_dhs_index']
     __intervals_attr__ = 'dhs_intervals'
+    
+    def _load(self, data: DataBundle, dhs_index: pd.DataFrame, extra_columns=None, rectprops_columns=None):
+        return super()._load(
+            data, 
+            segments_df=dhs_index, 
+            extra_columns=extra_columns,
+            rectprops_columns=rectprops_columns
+        )
 
 
 class FootprintsLoader(SegmentsLoader):
-    required_loader_kwargs = ['full_footprints_index']
     __intervals_attr__ = 'footprint_intervals'
+    def _load(self, data: DataBundle, footprints_index: pd.DataFrame, extra_columns=None, rectprops_columns=None):
+        return super()._load(
+            data, 
+            segments_df=footprints_index, 
+            extra_columns=extra_columns,
+            rectprops_columns=rectprops_columns
+        )
 
 
 class DHSLoadingsLoader(PlotDataLoader):

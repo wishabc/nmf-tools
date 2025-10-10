@@ -121,12 +121,18 @@ class NMFModel:
         return X, weights_params
 
             
-    def _run_fit_transform(self, X: Union[sp.csr_matrix, sp.csc_matrix], *, H=None, W=None, W_weights=None, H_weights=None, error_at_init=None, update_H=True):
+    def _run_fit_transform(self, X: Union[sp.csr_matrix, sp.csc_matrix], *, W=None, H=None, W_weights=None, H_weights=None, error_at_init=None, update_H=True):
         X, weights_params = self.parse_fit_mode(
             X,
             W_weights=W_weights,
             H_weights=H_weights
         )
+
+        if H is not None:
+            H = np.array(H, copy=True)
+
+        if W is not None:
+            W = np.array(W, copy=True)
 
         W, H, *_ = self.model._fit_transform(
             X=X,
@@ -154,8 +160,8 @@ class NMFModel:
         """
         W, H = self._run_fit_transform(
             X=X,
-            H=H,
             W=W,
+            H=H,
             update_H=True,
             W_weights=W_weights,
             H_weights=H_weights,
@@ -190,8 +196,8 @@ class NMFModel:
         """
         W, _ = self._run_fit_transform(
             X=X,
-            H=H,
             W=W,
+            H=H,
             update_H=False,
             W_weights=W_weights,
             H_weights=H_weights,
