@@ -62,7 +62,7 @@ def compute_weighted_stats(Z, counts):
     return mu, sigma
 
 
-def plot_contours(x, y, z, mask_radius=1.5, sigma=50, levels=50, linewidths=0.2, lw_outer=0, bins=1500, cmap='solar_extra', vmin=None, vmax=None, z_score=False, ax=None, **kwargs):
+def plot_contours(x, y, z, mask_radius=1.5, sigma=50, levels=50, linewidths=0.2, lw_outer=0, bins=1500, cmap='solar_extra', vmin=None, vmax=None, z_score=False, ax=None, rasterized=False, **kwargs):
     
     """
     Plot smoothed contour maps of scalar values over a 2D embedding.
@@ -118,7 +118,7 @@ def plot_contours(x, y, z, mask_radius=1.5, sigma=50, levels=50, linewidths=0.2,
     - If `z_score=True`, weighted mean and standard deviation are computed using
       `compute_weighted_stats`, and the smoothed values are standardized.
     """
-    
+
     if lw_outer is None:
         lw_outer = linewidths
 
@@ -186,6 +186,11 @@ def plot_contours(x, y, z, mask_radius=1.5, sigma=50, levels=50, linewidths=0.2,
     # Plot only the contour lines over the scatter, with white background outside scatter
     if linewidths > 0:
         contour_lines = ax.contour(X, Y, Z_masked, levels=levels, linewidths=linewidths, colors='grey', **kwargs)
+        if rasterized:
+            for c in contour_lines.collections:
+                c.set_rasterized(True)
+
+    
     cf = ax.contourf(
         X, Y, Z_masked,
         levels=levels, cmap=cmap, 
@@ -194,10 +199,18 @@ def plot_contours(x, y, z, mask_radius=1.5, sigma=50, levels=50, linewidths=0.2,
         **kwargs
     )
 
+    if rasterized:
+        for c in cf.collections:
+            c.set_rasterized(True)
+
     ax.axis('off')
 
-    ax.contour(X, Y, distance_mask.astype(float), levels=[0.5], colors='grey', linestyles='solid', linewidths=lw_outer)
+    outline_contour = ax.contour(X, Y, distance_mask.astype(float), levels=[0.5], colors='grey', linestyles='solid', linewidths=lw_outer, **kwargs)
+    if rasterized:
+        for c in outline_contour.collections:
+            c.set_rasterized(True)
 
+    
     # Now, create a separate figure with a colorbar.
     # We'll use the min and max of the masked grid (ignoring NaNs)
 
