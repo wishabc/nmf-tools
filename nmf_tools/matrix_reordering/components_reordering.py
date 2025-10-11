@@ -169,5 +169,4 @@ def order_components_by_component_data(W, component_data, order_column='index'):
     if len(order) != W.shape[0]:
         raise ValueError("Length of order does not match number of components in W")
     
-    component_orders = np.argsort(order)
-    return MatrixReordering(row_order=component_orders)
+    return MatrixReordering(row_order=order)
