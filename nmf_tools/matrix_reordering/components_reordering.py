@@ -42,6 +42,10 @@ def order_components(W, *, by='primary', normalize=False, **kwargs):
         return order_components_by_mean_loading(W, **kwargs)
     elif by == 'cluster':
         return order_components_by_cluster(W, **kwargs)
+    elif by == 'component_data':
+        if 'component_data' not in kwargs:
+            raise ValueError("component_data must be provided when by='component_data'")
+        return order_components_by_component_data(W, **kwargs)
     elif by is None:
         return MatrixReordering()
     else:
@@ -138,3 +142,31 @@ def order_components_by_cluster(W, cluster_labels=None, linkage_matrix=None,
         component_orders[:, idx] = component_priority[:, None]
     
     return MatrixReordering(row_order=component_orders.T)
+
+
+def order_components_by_component_data(W, component_data, order_column='index'):
+    """
+    Sorts elements in each column according to the order specified in component_data.
+
+    Parameters
+    ----------
+    W : np.ndarray (n_components, n_records)
+        Matrix to reorder.
+    component_data : pd.DataFrame
+        DataFrame with component information.
+    order_column : str
+        Column in component_data to use for ordering.
+
+    Returns
+    -------
+    component_orders : np.ndarray (n_components, n_records)
+        New order of components for each record.
+    """
+    if order_column not in component_data.columns:
+        raise ValueError(f"Column {order_column} not found in component_data")
+    
+    order = component_data[order_column].values
+    if len(order) != W.shape[0]:
+        raise ValueError("Length of order does not match number of components in W")
+    
+    return MatrixReordering(row_order=order)

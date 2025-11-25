@@ -16,16 +16,17 @@ def main(W: np.ndarray, densitity_files: pd.Series, topX: int, suffix: str):
         ][:topX]
         for sample in sorted_indices[:topX]:
             path = densitity_files.iloc[sample]
-            ag_id = densitity_files.index[sample]
+            sample_id = densitity_files.index[sample]
             try: 
                 os.symlink(
                     path,
-                    f'{component}.{ag_id}.component_{suffix}.bw'
+                    f'{component}.{sample_id}.component_{suffix}.bw'
                 )
             except TypeError:
                 print(path)
-            top_samples.append([ag_id, component])
-    return pd.DataFrame.from_records(top_samples, columns=['ag_id', 'component'])
+                raise
+            top_samples.append([sample_id, component])
+    return pd.DataFrame.from_records(top_samples, columns=['sample_id', 'component'])
 
 
 if __name__ == "__main__":

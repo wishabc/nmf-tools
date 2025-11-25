@@ -11,14 +11,8 @@ def main(nmf_input_data: NMFInputData):
     nmf_model = NMFModel(
         n_components=nmf_input_data.n_components,
         extra_params=nmf_input_data.extra_params,
+        fit_mode=nmf_input_data.mode
     )
-
-    if nmf_input_data.mode == "scaled_X":
-        nmf_input_data.matrix = nmf_input_data.matrix.multiply(
-            np.sqrt(nmf_input_data.peaks_weights)
-        ).T.multiply(
-            np.sqrt(nmf_input_data.samples_weights)
-        ).T.tocsr()
 
     if nmf_input_data.samples_mask.sum() < nmf_input_data.samples_mask.shape[0]:
         X = nmf_input_data.matrix[nmf_input_data.samples_mask, :]
@@ -28,30 +22,20 @@ def main(nmf_input_data: NMFInputData):
     peaks_mask = nmf_input_data.peaks_mask & (X.sum(axis=0) > 0).A1
     X = X[:, peaks_mask]
 
-    # Initial fit
-    if nmf_input_data.mode == "scaled_X":
-        W, H = nmf_model.fit_transform(X)
-    else:
-        W, H = nmf_model.fit_transform(
-            X,
-            W_weights=nmf_input_data.samples_weights[nmf_input_data.samples_mask],
-            H_weights=nmf_input_data.peaks_weights[peaks_mask]
-        )
+    W, H = nmf_model.fit_transform(
+        X,
+        W_weights=nmf_input_data.samples_weights[nmf_input_data.samples_mask],
+        H_weights=nmf_input_data.peaks_weights[peaks_mask]
+    )
     
     # Optional, projects masked samples
     if nmf_input_data.project_masked_samples:
-        if nmf_input_data.mode == "scaled_X":
-            W = nmf_model.project_samples(
-                nmf_input_data.matrix[:, peaks_mask],
-                H
-            )
-        else:
-            W = nmf_model.project_samples(
-                nmf_input_data.matrix[:, peaks_mask],
-                H,
-                W_weights=nmf_input_data.samples_weights,
-                H_weights=nmf_input_data.peaks_weights[peaks_mask]
-            )
+        W = nmf_model.project_samples(
+            nmf_input_data.matrix[:, peaks_mask],
+            H,
+            W_weights=nmf_input_data.samples_weights,
+            H_weights=nmf_input_data.peaks_weights[peaks_mask]
+        )
 
     return W, H, peaks_mask
 

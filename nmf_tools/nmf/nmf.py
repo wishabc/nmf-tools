@@ -2,10 +2,12 @@ import numpy as np
 from sklearn.base import clone
 
 from .weighted_NMF import WeightedNMF
+from sklearn.decomposition import NMF
 import scipy.sparse as sp
 from nmf_tools.matrix_reordering.components_reordering import order_components_by_template
 import os
 import pandas as pd
+from typing import Union
 
 import functools
 dtype = np.float64
@@ -75,7 +77,7 @@ def validate_input_args(func):
     
 
 class NMFModel:
-    def __init__(self, n_components, extra_params: dict=None):
+    def __init__(self, n_components, extra_params: dict=None, fit_mode='weighted'):
         params = dict(
             n_components=n_components,
             solver='mu',
@@ -96,23 +98,55 @@ class NMFModel:
             params.update(extra_params)
             if overwritten:
                 print("Overwritten params:", overwritten, flush=True)
-    
+        assert fit_mode in ('weighted', 'scaled_X'), "fit_mode must be one of 'weighted' or 'scaled_X'"
+        self.fit_mode = fit_mode
         self.model = WeightedNMF(**params)
 
-    def _run_fit_transform(self, X, *, 
-                        H=None, W=None, W_weights=None, H_weights=None, error_at_init=None,
-                        update_H=True):
+
+    def parse_fit_mode(self, X: Union[sp.csr_matrix, sp.csc_matrix], *, W_weights, H_weights):
         W_weights = np.asarray(W_weights)
         H_weights = np.asarray(H_weights)
+        if self.fit_mode == 'scaled_X':
+            X = X.multiply(
+                np.sqrt(H_weights)
+            ).T.multiply(
+                np.sqrt(W_weights)
+            ).T.tocsr()
+            weights_params = {}
+        else:
+            weights_params = dict(
+                W_weights=W_weights[:, None],
+                H_weights=H_weights[None, :]
+            )
+        return X, weights_params
+
+            
+    def _run_fit_transform(self, X: Union[sp.csr_matrix, sp.csc_matrix], *, W=None, H=None, W_weights=None, H_weights=None, error_at_init=None, update_H=True):
+        X, weights_params = self.parse_fit_mode(
+            X,
+            W_weights=W_weights,
+            H_weights=H_weights
+        )
+
+        if H is not None:
+            H = np.array(H, copy=True)
+
+        if W is not None:
+            W = np.array(W, copy=True)
+
         W, H, *_ = self.model._fit_transform(
             X=X,
             H=H,
             W=W,
             update_H=update_H,
-            W_weights=W_weights[:, None],
-            H_weights=H_weights[None, :],
+            **weights_params,
             error_at_init=error_at_init
         )
+        if self.fit_mode == 'scaled_X':
+            W_weights = np.asarray(W_weights)
+            H_weights = np.asarray(H_weights)
+            W = W / np.sqrt(W_weights[:, None])
+            H = H / np.sqrt(H_weights[None, :])
         return W, H
 
     @validate_input_args
@@ -126,8 +160,8 @@ class NMFModel:
         """
         W, H = self._run_fit_transform(
             X=X,
-            H=H,
             W=W,
+            H=H,
             update_H=True,
             W_weights=W_weights,
             H_weights=H_weights,
@@ -139,15 +173,17 @@ class NMFModel:
     def reconstruction_error(self, X, *, W=None, H=None, W_weights=None, H_weights=None, **model_kwargs):
         model: WeightedNMF = clone(self.model)
         model = model.set_params(**model_kwargs)
+        X, weights_params = self.parse_fit_mode(X, W_weights=W_weights, H_weights=H_weights)
+
         model._check_params(X)
+
         W, H = model._check_w_h(X, W, H, update_H=True)
 
         return model.reconstruction_error(
             X=X,
             W=W,
             H=H,
-            W_weights=W_weights[:, None],
-            H_weights=H_weights[None, :]
+            **weights_params
         )
 
     @validate_input_args
@@ -160,8 +196,8 @@ class NMFModel:
         """
         W, _ = self._run_fit_transform(
             X=X,
-            H=H,
             W=W,
+            H=H,
             update_H=False,
             W_weights=W_weights,
             H_weights=H_weights,
@@ -177,7 +213,7 @@ class NMFModel:
         NMF: X.T = H.T @ W.T
         NMF: peaks x samples = peaks x components * components x samples
         """
-        projected_peaks, _ = self.model._fit_transform(
+        projected_peaks, _ = self._run_fit_transform(
             X=X.T,
             H=W.T,
             W=None if H is None else H.T,
