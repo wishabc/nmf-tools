@@ -1,9 +1,7 @@
-from nmf_tools.plotting.modular_plot import uses_loaders
-from nmf_tools.plotting.modular_plot.interval_plot.plot_components import IntervalPlotComponent, SingleBPObjectsComponent, SegmentPlotComponent
-
 import numpy as np
 
 from .loaders import *
+from .basic_loaders import *
 
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
@@ -11,10 +9,13 @@ import matplotlib.pyplot as plt
 from genome_tools.plotting import signal_plot, segment_plot
 from genome_tools.plotting.gene_annotation import gene_annotation_plot
 from genome_tools.plotting.ideogram import ideogram_plot
-from genome_tools.plotting.utils import clear_spines
+from genome_tools.plotting.utils import clear_spines, format_axes_to_interval
 from genome_tools.plotting.pwm import plot_motif_logo
 from genome_tools.plotting.colors.cm import get_vocab_color
-from genome_tools.plotting.utils import format_axes_to_interval
+
+
+from nmf_tools.plotting.modular_plot import uses_loaders
+from nmf_tools.plotting.modular_plot.interval_plot.plot_components import IntervalPlotComponent, SingleBPObjectsComponent, SegmentPlotComponent
 
 from nmf_tools import in_vierstra_style
 from nmf_tools.plotting.matrices_barplots import component_barplot
@@ -151,24 +152,6 @@ class DHSLoadingsComponent(IntervalPlotComponent):
             component_barplot(H[:, genomic_interval.index: genomic_interval.index + 1], component_data, ax=ax, normalize=True)
 
 
-@uses_loaders(FootprintDatasetLoader)
-class FootprintTrackComponent(IntervalPlotComponent):
-
-    @in_vierstra_style
-    @IntervalPlotComponent.set_xlim_interval
-    def _plot(self, data, ax, smpl_idx=0, color='k', exp_color='C1', lw=0.5, kind='pp', **kwargs):
-        xs = self.squarify_array(np.arange(data.pp.shape[1] + 1) + data.interval.start)
-        if kind == 'pp':
-            ax.plot(xs, np.repeat(data.pp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
-        elif kind == 'obs/exp':
-            ax.plot(xs, np.repeat(data.obs[smpl_idx, :], 2), color=exp_color, lw=lw, **kwargs)
-            ax.plot(xs, np.repeat(data.exp[smpl_idx, :], 2), color=color, lw=lw, **kwargs)
-        format_axes_to_interval(ax, data.interval)
-        return ax
-    
-    @staticmethod
-    def squarify_array(y):
-        return np.concatenate([y[:1], np.repeat(y[1:-1], 2), y[-1:]])
 
 
 @uses_loaders(MotifLoader)
@@ -179,15 +162,15 @@ class MotifComponent(IntervalPlotComponent):
     def _plot(self, data, ax, **kwargs):
         ax.axis('off')
         axes = self.add_axes_at_middle_points(data.motif_intervals, data.interval, ax=ax)
-        self.plot_motifs_for_footprints(data.motif_intervals, axes)
+        self.plot_motifs_for_intervals(data.motif_intervals, axes)
         return ax
     
     @staticmethod
-    def plot_motifs_for_footprints(motif_intervals, axes):
+    def plot_motifs_for_intervals(motif_intervals, axes):
         assert len(motif_intervals) == len(axes)
-        for fp_interval, ax in zip(motif_intervals, axes):
-            plot_motif_logo(fp_interval.pwm, rc=fp_interval.orient == '-', font='IBM Plex Mono', ax=ax)
-            ax.set_xlabel(fp_interval.tf_name, labelpad=0.5)
+        for interval, ax in zip(motif_intervals, axes):
+            plot_motif_logo(interval.pwm, rc=interval.orient == '-', font='IBM Plex Mono', ax=ax)
+            ax.set_xlabel(interval.tf_name, labelpad=0.5)
 
 
 @uses_loaders(AggregatedCAVLoader)
@@ -233,3 +216,6 @@ class AllelicReadsComponent(IntervalPlotComponent):
         ax.set_yticks([])
         format_axes_to_interval(ax, data.interval)
         return ax
+
+
+

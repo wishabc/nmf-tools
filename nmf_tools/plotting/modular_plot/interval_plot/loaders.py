@@ -4,24 +4,12 @@ import pandas as pd
 from nmf_tools.plotting.modular_plot import PlotDataLoader, DataBundle
 from genome_tools.genomic_interval import df_to_genomic_intervals, filter_df_to_interval, df_to_variant_intervals
 
-from genome_tools.data.extractors import TabixExtractor
+from genome_tools.data.extractors import TabixExtractor, FastaExtractor, VariantGenotypeExtractor
+
 from genome_tools.utils.signal import smooth_and_aggregate_per_nucleotide_signal
 
-try:
-    from footprint_tools.cli.post import posterior_stats as PosteriorStats
-    from footprint_tools.stats import posterior
-except ImportError:
-    print("Install footprint_tools to use FootprintDatasetLoader and FootprintsLoader")
 
-from nmf_tools.plotting.extract_reads import extract_allelic_reads
-
-
-class IdeogramLoader(PlotDataLoader):
-    required_loader_kwargs = ['ideogram_data']
-
-
-class GencodeLoader(PlotDataLoader):
-    required_loader_kwargs = ['gencode_annotation_file']
+from nmf_tools.plotting.modular_plot.interval_plot.basic_loaders import SignalLoader, SegmentsLoader
 
 
 class FinemapLoader(PlotDataLoader):
@@ -31,17 +19,6 @@ class FinemapLoader(PlotDataLoader):
             f'region == "{region}" & trait == "{trait}" & cs_id == {cs_id}'
         ).drop_duplicates('end')
         data.unique_finemap_df = finemap_df
-        return data
-    
-
-class SignalLoader(PlotDataLoader):
-    
-    def _load(self, data, signal_files, smooth=True, step=20, bandwidth=150):
-        if not smooth:
-            bandwidth = 1
-        segs = smooth_and_aggregate_per_nucleotide_signal(data.interval, signal_files,
-                                                          step=step, bandwidth=bandwidth)
-        data.signal = segs
         return data
 
 
@@ -65,30 +42,7 @@ class ComponentTracksLoader(PlotDataLoader):
         return data
 
 # FIXME
-class SegmentsLoader(PlotDataLoader):
-    __intervals_attr__ = 'intervals'
 
-    def _load(self, data: DataBundle, segments_df: pd.DataFrame, extra_columns=None, rectprops_columns=None):
-        if rectprops_columns is None:
-            rectprops_columns = []
-        if extra_columns is None:
-            extra_columns = []
-        setattr(
-            data,
-            self.__intervals_attr__, 
-            df_to_genomic_intervals(
-                segments_df.reset_index(drop=True).reset_index(),
-                data.interval,
-                extra_columns=['index'] + extra_columns + rectprops_columns
-            )
-        )
-
-        if rectprops_columns:
-            for interval in getattr(data, self.__intervals_attr__):
-                interval.rectprops = {
-                    col: getattr(interval, col) for col in rectprops_columns
-                    }
-        return data
 
 
 class DHSIndexLoader(SegmentsLoader):
@@ -117,37 +71,6 @@ class FootprintsLoader(SegmentsLoader):
 class DHSLoadingsLoader(PlotDataLoader):
     required_loader_kwargs = ['H']
 
-
-# TODO: sample data file actually is not needed, it should be any pandas df file whatsoever
-class FootprintDatasetLoader(PlotDataLoader):
-
-    def _load(self, data: DataBundle, fp_sample_data_file, fp_sample_data, fp_samples, fdr_cutoff=0.05):
-        dl = PosteriorStats(
-            fp_sample_data_file,
-            fp_sample_data.loc[fp_samples],
-            fdr_cutoff=fdr_cutoff,
-        )
-        dl._open_tabix_files()
-        obs, exp, fdr, w = dl._load_data(data.interval)
-
-        prior = posterior.compute_prior_weighted(fdr, w, cutoff=0.05) #????
-        delta = posterior.compute_delta_prior(
-            obs, exp, fdr, dl.betas, cutoff=0.1 #????
-        )
-        
-        ll_on = posterior.log_likelihood(obs, exp, dl.disp_models, delta=delta, w=3)
-        ll_off = posterior.log_likelihood(obs, exp, dl.disp_models, w=3)
-
-        post = -posterior.posterior(prior, ll_on, ll_off)
-        post[post <= 0] = 0.0
-
-        z = 1 - np.exp(-post)
-
-        data.pp = z
-        data.obs = obs
-        data.exp = exp
-
-        return data
 
 
 class MotifLoader(PlotDataLoader):
@@ -205,15 +128,3 @@ class PerSampleCAVLoader(PlotDataLoader):
         return data
 
 
-class AllelicReadsLoader(PlotDataLoader):
-    __required_fields__ = ['samples_metadata']
-
-    def _load(self, data: DataBundle, sample_ids, samples_metadata, variant_interval):
-        if isinstance(sample_ids, (str, int, float)):
-            sample_ids = [sample_ids]
-        cram_paths = samples_metadata.loc[sample_ids, 'cram_file']
-        reads = {}
-        for sample_id, cram_path in zip(sample_ids, cram_paths):
-            reads[sample_id] = extract_allelic_reads(cram_path, variant_interval, data.interval)
-        data.reads = reads
-        return data
