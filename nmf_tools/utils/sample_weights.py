@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def get_category_inverse_weights(labels):
     unique_labels, counts = np.unique(labels, return_counts=True)
     label_to_count = dict(zip(unique_labels, counts))
