@@ -4,11 +4,11 @@ import scipy.sparse as sp
 
 
 def reduce_matrix_within_category(
-    matrix,
+    matrix: np.ndarray,
     annotation_by_sample_membership: pd.DataFrame,
     reduction='sum',
 ):
-    assert annotation_by_sample_membership.shape[1] == matrix.shape[0]
+    assert annotation_by_sample_membership.shape[1] == matrix.shape[0], f"Got shapes {annotation_by_sample_membership.shape} {matrix.shape}. Can't multiply values."
     result = sp.csr_matrix(annotation_by_sample_membership.values) @ matrix
     if reduction == 'sum':
         return result
@@ -46,8 +46,8 @@ def annotate_dhss_with_sample_statistics(adata, statistic, reduction='sum'):
         statistic = adata.obs[[statistic]] # 3000 x 1
 
     value_sums = reduce_matrix_within_category(
-        statistic.T,
         adata.layers['binary'],
+        statistic.T,
         reduction='sum',
     ).todense().A.T
     
