@@ -122,3 +122,17 @@ def define_colors(n_components, component_data: pd.DataFrame=None):
             component_colors.append(new_color)
             count += 1
     return component_colors[:n_components]
+
+
+def component_data_from_anndata(anndata):
+    component_data = anndata.var[['nmf_index', 'nmf_color', 'nmf_name', 'nmf_short_name']].dropna().drop_duplicates().reset_index(drop=True)
+    component_data['nmf_index'] = component_data['nmf_index'].astype(int)
+
+    components_order = anndata.uns['nmf_components_plot_order']
+
+    component_data = component_data.rename(columns={
+        x: x.replace('nmf_', '') for x in component_data.columns
+    }).set_index('name').loc[
+        components_order
+    ].reset_index()
+    return component_data
