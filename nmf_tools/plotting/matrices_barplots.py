@@ -80,9 +80,10 @@ def component_barplot_at_scale(
     if figsize is None:
         figsize = (20, 4 * n_chunks)
     fig, axes = plt.subplots(n_chunks, 1, figsize=figsize)
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=1.5)
+
     if n_chunks == 1:
         axes = [axes]
-    fig.subplots_adjust(hspace=1.5)
     
     maxv = np.max(tops)
     for k in tqdm(np.arange(n_chunks)):
@@ -160,7 +161,7 @@ def component_barplot_with_dendrogram(
     cluster_threshold=0.7,
     criterion='distance',
     normalize_for_plotting=False,
-    fig=None,
+    figsize=None,
     **kwargs
 ):
     if records_labels is not None:
@@ -169,8 +170,11 @@ def component_barplot_with_dendrogram(
     if linkage_matrix is None:
         linkage_matrix = hierarchical_clustering(matrix, **kwargs)
 
-    if fig is None:
-        fig = plt.figure(figsize=(20, 4))
+    if figsize is None:
+        figsize=(20, 4)
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
+
     gs = gridspec.GridSpec(2, 1, hspace=0)
 
     ax1 = fig.add_subplot(gs[0])
