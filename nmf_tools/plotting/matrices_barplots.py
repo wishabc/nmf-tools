@@ -222,6 +222,7 @@ def plot_top_contributing_samples(W, annotations, component_data, ncols=5, top_c
         figsize = ncols * 3.2, nrows * 2.7
 
     fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
     gs = gridspec.GridSpec(nrows, ncols, wspace=wspace, hspace=hspace)
 
     axes = []
