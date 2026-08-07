@@ -224,9 +224,10 @@ def plot_grid_panels(
         fig = plt.gcf()
     if ax is None:
         ax = plt.gca()
+    subplot_spec = ax.get_subplotspec() if hasattr(ax, "get_subplotspec") else ax
 
     gs = gridspec.GridSpecFromSubplotSpec(
-        n_rows, 1, height_ratios=h_ratios, hspace=hspace, subplot_spec=ax
+        n_rows, 1, height_ratios=h_ratios, hspace=hspace, subplot_spec=subplot_spec
     )
 
     all_axes = []
