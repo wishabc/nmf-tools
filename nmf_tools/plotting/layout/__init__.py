@@ -153,7 +153,10 @@ def plot_row_panels(
         fig = plt.gcf()
     if ax is None:
         ax = plt.gca()
-    gs = gridspec.GridSpecFromSubplotSpec(1, n_columns, width_ratios=w_ratios, wspace=wspace, subplot_spec=ax)
+
+    subplot_spec = ax.get_subplotspec() if hasattr(ax, "get_subplotspec") else ax
+
+    gs = gridspec.GridSpecFromSubplotSpec(1, n_columns, width_ratios=w_ratios, wspace=wspace, subplot_spec=subplot_spec)
     axes = []
     for i, (arg, kwarg) in enumerate(
         broadcast_zip(
